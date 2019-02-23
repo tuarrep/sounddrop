@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package message;
+
+message PeerOnline {
+    string id = 1;
+}
+
+message PeerOffline {
+    string id = 1;
+}
+
+message WriteRequest {
+    string device_name = 1;
+    bytes message = 2;
+}

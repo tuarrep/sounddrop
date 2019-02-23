@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package message;
+
+message DeviceAllowed {
+    string id = 1;
+}
+
+message DeviceDisallowed {
+    string id = 1;
+}

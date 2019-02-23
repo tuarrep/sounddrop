@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package message;
+
+message StreamData {
+    repeated double samplesLeft = 1;
+    repeated double samplesRight = 2;
+}
