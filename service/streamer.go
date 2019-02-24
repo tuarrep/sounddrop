@@ -8,6 +8,7 @@ import (
 	"os"
 	"sounddrop/message"
 	"sounddrop/util"
+	"time"
 )
 
 type Streamer struct {
@@ -51,6 +52,6 @@ func (this *Streamer) Serve() {
 		msgData, _ := message.ToBuffer(msg)
 		this.Messenger.Message <- &message.WriteRequest{DeviceName: "*", Message: msgData}
 
-		//time.Sleep(format.SampleRate.D(n))
+		time.Sleep(format.SampleRate.D(n))
 	}
 }
