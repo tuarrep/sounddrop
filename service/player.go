@@ -1,7 +1,6 @@
 package service
 
 import (
-	"fmt"
 	"github.com/faiface/beep"
 	"github.com/faiface/beep/speaker"
 	"github.com/faiface/beep/wav"
@@ -75,12 +74,10 @@ func (this *Player) handleStreamData(m *message.StreamData) {
 }
 
 func (this *Player) Stream(samples [][2]float64) (n int, ok bool) {
-	requestedLength, realLength := len(samples), len(samples)
+	realLength := len(samples)
 	if realLength > len(this.data) {
 		realLength = len(this.data)
 	}
-
-	this.log.Debug(fmt.Sprintf("Time to stream! requested=%d, real=%d, available=%d", requestedLength, realLength, len(this.data)))
 
 	fetchedSamples := this.data[:realLength]
 
