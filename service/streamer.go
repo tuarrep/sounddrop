@@ -5,6 +5,7 @@ import (
 	"github.com/faiface/beep/wav"
 	"github.com/golang/protobuf/proto"
 	"github.com/sirupsen/logrus"
+	"io/ioutil"
 	"os"
 	"github.com/mafzst/sounddrop/message"
 	"github.com/mafzst/sounddrop/util"
@@ -15,6 +16,7 @@ type Streamer struct {
 	Message   chan proto.Message
 	log       *logrus.Entry
 	Messenger *Messenger
+	sb *util.ServiceBag
 }
 
 func (this *Streamer) Stop() {
@@ -25,33 +27,42 @@ func (this *Streamer) Serve() {
 	this.log = util.GetContextLogger("service/streamer.go", "Services/Streamer")
 	this.log.Info("Streamer starting...")
 
-	file, err := os.Open("test.wav")
+	this.sb = util.GetServiceBag()
+
+	files, err := ioutil.ReadDir(this.sb.Config.Streamer.PlaylistDir)
 	util.CheckError(err, this.log)
-	stream, format, err := wav.Decode(file)
-	util.CheckError(err, this.log)
 
-	this.log.Info(fmt.Sprintf("Audio format is: channels=%d, sampleRate=%d, precision=%d", format.NumChannels, format.SampleRate, format.Precision))
+	this.log.Info(fmt.Sprintf("Streamer started. %d files found", len(files)))
 
-	buff := make([][2]float64, 512)
+	for _, file := range files {
+		fileData, err := os.Open(fmt.Sprintf("%s/%s", this.sb.Config.Streamer.PlaylistDir, file.Name()))
+		util.CheckError(err, this.log)
+		stream, format, err := wav.Decode(fileData)
+		util.CheckError(err, this.log)
 
-	ok := true
-	n := 512
+		this.log.Info(fmt.Sprintf("Audio format is: channels=%d, sampleRate=%d, precision=%d", format.NumChannels, format.SampleRate, format.Precision))
 
-	for ok == true {
-		n, ok = stream.Stream(buff)
+		buff := make([][2]float64, 512)
 
-		samplesLeft := make([]float64, n)
-		samplesRight := make([]float64, n)
+		ok := true
+		n := 512
 
-		for i := 0; i < n; i++ {
-			samplesLeft[i] =  buff[i][0]
-			samplesRight[i] = buff[i][1]
+		for ok == true {
+			n, ok = stream.Stream(buff)
+
+			samplesLeft := make([]float64, n)
+			samplesRight := make([]float64, n)
+
+			for i := 0; i < n; i++ {
+				samplesLeft[i] = buff[i][0]
+				samplesRight[i] = buff[i][1]
+			}
+
+			msg := &message.StreamData{SamplesLeft: samplesLeft, SamplesRight: samplesRight}
+			msgData, _ := message.ToBuffer(msg)
+			this.Messenger.Message <- &message.WriteRequest{DeviceName: "*", Message: msgData}
+
+			time.Sleep(format.SampleRate.D(n))
 		}
-
-		msg := &message.StreamData{SamplesLeft: samplesLeft, SamplesRight: samplesRight}
-		msgData, _ := message.ToBuffer(msg)
-		this.Messenger.Message <- &message.WriteRequest{DeviceName: "*", Message: msgData}
-
-		time.Sleep(format.SampleRate.D(n))
 	}
 }

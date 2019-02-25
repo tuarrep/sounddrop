@@ -53,7 +53,7 @@ func (this *Server) Serve() {
 
 	this.Messenger.Register(message.WriteRequestMessage, this)
 
-	this.log.Info("Server started. Port: ", this.sb.Config.Discover.Port)
+	this.log.Info("Server started. Listening at", this.sc.LocalAddr().String())
 
 	for {
 		select {
