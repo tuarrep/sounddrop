@@ -26,3 +26,6 @@ Nicolas Perraut - [@mafzst](https://github.com/mafzst)
 
 ## License
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fmafzst%2Fsounddrop.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fmafzst%2Fsounddrop?ref=badge_large)
+
+## Third party softwares
+See [FOSSA Report](https://app.fossa.io/attribution/f77bb2ca-2a14-4cc0-98c9-eb438f6814fe)
