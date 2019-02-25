@@ -5,8 +5,8 @@ import (
 	"github.com/thejerf/suture"
 	"os"
 	"os/signal"
-	"sounddrop/service"
-	"sounddrop/util"
+	"github.com/mafzst/sounddrop/service"
+	"github.com/mafzst/sounddrop/util"
 )
 
 func main() {

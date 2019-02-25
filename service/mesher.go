@@ -3,8 +3,8 @@ package service
 import (
 	"github.com/golang/protobuf/proto"
 	"github.com/sirupsen/logrus"
-	"sounddrop/message"
-	"sounddrop/util"
+	"github.com/mafzst/sounddrop/message"
+	"github.com/mafzst/sounddrop/util"
 )
 
 type Device struct {

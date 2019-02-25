@@ -5,8 +5,8 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/sirupsen/logrus"
 	"net"
-	"sounddrop/message"
-	"sounddrop/util"
+	"github.com/mafzst/sounddrop/message"
+	"github.com/mafzst/sounddrop/util"
 	"time"
 )
 
