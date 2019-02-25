@@ -5,4 +5,5 @@ package message;
 message Announce {
     uint32 service_number = 1;
     string device_name = 2;
+    string raddr = 3;
 }

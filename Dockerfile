@@ -18,6 +18,8 @@ RUN go get golang.org/x/text
 RUN apt install -y libasound2-dev
 RUN go get github.com/hajimehoshi/oto
 
+RUN go get github.com/xtaci/kcp-go
+
 WORKDIR /go/src/sounddrop
 COPY . .
 

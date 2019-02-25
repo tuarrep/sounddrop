@@ -10,9 +10,9 @@ import (
 )
 
 type Messenger struct {
-	Message   chan proto.Message
-	log       *logrus.Entry
-	listeners map[byte][]message.Receiver
+	Message        chan proto.Message
+	log            *logrus.Entry
+	listeners      map[byte][]message.Receiver
 	listenersMutex sync.Mutex
 }
 
@@ -39,7 +39,7 @@ func (this *Messenger) Serve() {
 					listener.GetChan() <- msg
 				}
 			} else {
-				this.log.Debug(fmt.Sprintf("Message of type %d received but no listeners was registered", opCode))
+				//this.log.Debug(fmt.Sprintf("Message of type %d received but no listeners was registered", opCode))
 			}
 		}
 	}
