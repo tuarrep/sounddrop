@@ -8,6 +8,7 @@ It's designed to run on multiple devices and allows them to discover themselves 
 User can after create group of devices to share sound between them.
 
 ## Basic usage
+**Versions of go prior to 1.8 aren't supported**
 ```bash
 go get ./...
 
