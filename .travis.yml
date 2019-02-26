@@ -13,6 +13,7 @@ matrix:
     - go: tip
 before_install:
   - go get github.com/mitchellh/gox
+  - go get github.com/konsorten/go-windows-terminal-sequences # for windows build
   - sudo apt update && sudo apt install -y libasound2-dev
 install:
   -
