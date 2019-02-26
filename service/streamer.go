@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"github.com/faiface/beep/wav"
 	"github.com/golang/protobuf/proto"
+	"github.com/mafzst/sounddrop/message"
+	"github.com/mafzst/sounddrop/util"
 	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"os"
-	"github.com/mafzst/sounddrop/message"
-	"github.com/mafzst/sounddrop/util"
 	"time"
 )
 
@@ -16,7 +16,7 @@ type Streamer struct {
 	Message   chan proto.Message
 	log       *logrus.Entry
 	Messenger *Messenger
-	sb *util.ServiceBag
+	sb        *util.ServiceBag
 }
 
 func (this *Streamer) Stop() {

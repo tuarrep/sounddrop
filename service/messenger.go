@@ -3,16 +3,16 @@ package service
 import (
 	"fmt"
 	"github.com/golang/protobuf/proto"
-	"github.com/sirupsen/logrus"
 	"github.com/mafzst/sounddrop/message"
 	"github.com/mafzst/sounddrop/util"
+	"github.com/sirupsen/logrus"
 	"sync"
 )
 
 type Messenger struct {
-	Message   chan proto.Message
-	log       *logrus.Entry
-	listeners map[byte][]message.Receiver
+	Message        chan proto.Message
+	log            *logrus.Entry
+	listeners      map[byte][]message.Receiver
 	listenersMutex sync.Mutex
 }
 

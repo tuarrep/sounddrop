@@ -13,13 +13,13 @@ type Receiver interface {
 const ServiceNumber uint32 = 0xECC377BC
 
 const (
-	AnnounceMessage    = 0x00
-	DeviceAllowedMessage = 0x10
+	AnnounceMessage         = 0x00
+	DeviceAllowedMessage    = 0x10
 	DeviceDisallowedMessage = 0x11
-	StreamDataMessage = 0x20
-	PeerOnlineMessage  = 0xF0
-	PeerOfflineMessage = 0xF1
-	WriteRequestMessage = 0xF2
+	StreamDataMessage       = 0x20
+	PeerOnlineMessage       = 0xF0
+	PeerOfflineMessage      = 0xF1
+	WriteRequestMessage     = 0xF2
 )
 
 func FromBuffer(buffer []byte) (proto.Message, error) {
@@ -61,7 +61,7 @@ func ToBuffer(message proto.Message) ([]byte, error) {
 	return append([]byte{opcode}, data...), nil
 }
 
-func FindOpCode (message proto.Message) (byte, error) {
+func FindOpCode(message proto.Message) (byte, error) {
 	var opcode byte
 
 	switch message.(type) {

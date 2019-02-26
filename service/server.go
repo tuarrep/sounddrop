@@ -3,10 +3,10 @@ package service
 import (
 	"fmt"
 	"github.com/golang/protobuf/proto"
-	"github.com/sirupsen/logrus"
-	"net"
 	"github.com/mafzst/sounddrop/message"
 	"github.com/mafzst/sounddrop/util"
+	"github.com/sirupsen/logrus"
+	"net"
 	"time"
 )
 

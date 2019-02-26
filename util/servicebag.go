@@ -6,10 +6,11 @@ import (
 
 type ServiceBag struct {
 	DeviceID protocol.DeviceID
-	Config *Config
+	Config   *Config
 }
 
 var instance *ServiceBag
+
 func GetServiceBag() *ServiceBag {
 	if instance == nil {
 		config := InitConfig()

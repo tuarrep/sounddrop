@@ -5,7 +5,7 @@ import (
 )
 
 func CheckError(err error, logger *logrus.Entry) {
-	if err  != nil {
+	if err != nil {
 		logger.Error(err)
 		panic(err)
 	}

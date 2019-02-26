@@ -2,12 +2,13 @@ package main
 
 import (
 	"github.com/golang/protobuf/proto"
+	"github.com/mafzst/sounddrop/service"
+	"github.com/mafzst/sounddrop/util"
 	"github.com/thejerf/suture"
 	"os"
 	"os/signal"
-	"github.com/mafzst/sounddrop/service"
-	"github.com/mafzst/sounddrop/util"
 )
+
 // Rev is set on build time and should contain the git commit
 var rev = ""
 
@@ -42,7 +43,7 @@ func main() {
 	mesher := &service.Mesher{Messenger: messenger}
 	supervisor.Add(mesher)
 
-	player := &service.Player{Messenger:messenger}
+	player := &service.Player{Messenger: messenger}
 	supervisor.Add(player)
 
 	if sb.Config.Streamer.AutoStart {
