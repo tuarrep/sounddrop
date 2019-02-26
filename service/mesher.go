@@ -7,12 +7,14 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// Device mesh device
 type Device struct {
 	id      string
 	online  bool
 	allowed bool
 }
 
+// Mesher mesher service
 type Mesher struct {
 	message   chan proto.Message
 	Messenger *Messenger
@@ -21,72 +23,75 @@ type Mesher struct {
 	sb        *util.ServiceBag
 }
 
-func (this *Mesher) Stop() {
-	this.log.Info("Mesher stopped.")
+// Stop clean service when stopped by supervisor
+func (msh *Mesher) Stop() {
+	msh.log.Info("Mesher stopped.")
 }
 
-func (this *Mesher) Serve() {
-	this.log = util.GetContextLogger("service/mesher.go", "Services/Mesher")
+// Serve main service code
+func (msh *Mesher) Serve() {
+	msh.log = util.GetContextLogger("service/mesher.go", "Services/Mesher")
 
-	this.log.Info("Mesher starting...")
+	msh.log.Info("Mesher starting...")
 
-	this.sb = util.GetServiceBag()
-	this.message = make(chan proto.Message)
-	this.devices = make(map[string]*Device)
-	this.Messenger.Register(message.PeerOnlineMessage, this)
-	this.Messenger.Register(message.PeerOfflineMessage, this)
-	this.Messenger.Register(message.DeviceAllowedMessage, this)
+	msh.sb = util.GetServiceBag()
+	msh.message = make(chan proto.Message)
+	msh.devices = make(map[string]*Device)
+	msh.Messenger.Register(message.PeerOnlineMessage, msh)
+	msh.Messenger.Register(message.PeerOfflineMessage, msh)
+	msh.Messenger.Register(message.DeviceAllowedMessage, msh)
 
-	this.devices[this.sb.DeviceID.String()] = &Device{id: this.sb.DeviceID.String(), online: true, allowed: this.sb.Config.Mesh.AutoAccept}
+	msh.devices[msh.sb.DeviceID.String()] = &Device{id: msh.sb.DeviceID.String(), online: true, allowed: msh.sb.Config.Mesh.AutoAccept}
 
 	for {
 		select {
-		case msg := <-this.message:
+		case msg := <-msh.message:
 			switch m := msg.(type) {
 			case *message.PeerOnline:
-				if device, found := this.devices[m.Id]; found {
+				if device, found := msh.devices[m.Id]; found {
 					device.online = true
-					this.devices[m.Id] = device
-					this.log.Warn("Online device ", m.Id)
+					msh.devices[m.Id] = device
+					msh.log.Warn("Online device ", m.Id)
 				} else {
-					device := &Device{id: m.Id, online: true, allowed: this.sb.Config.Mesh.AutoAccept}
-					this.devices[m.Id] = device
-					this.log.Debug("New device ", device.id)
+					device := &Device{id: m.Id, online: true, allowed: msh.sb.Config.Mesh.AutoAccept}
+					msh.devices[m.Id] = device
+					msh.log.Debug("New device ", device.id)
 
-					if this.sb.Config.Mesh.AutoAccept {
-						this.log.Warn("Auto accepting device ", m.Id)
-						this.sendMeshState()
+					if msh.sb.Config.Mesh.AutoAccept {
+						msh.log.Warn("Auto accepting device ", m.Id)
+						msh.sendMeshState()
 					}
 				}
 			case *message.PeerOffline:
-				if device, found := this.devices[m.Id]; found {
+				if device, found := msh.devices[m.Id]; found {
 					device.online = false
-					this.devices[m.Id] = device
-					this.log.Warn("Offline device ", m.Id)
+					msh.devices[m.Id] = device
+					msh.log.Warn("Offline device ", m.Id)
 				}
 			case *message.DeviceAllowed:
-				if device, found := this.devices[m.Id]; found && device.allowed == false {
+				if device, found := msh.devices[m.Id]; found && device.allowed == false {
 					device.allowed = true
-					this.devices[m.Id] = device
-					this.log.Warn("Accepted device ", m.Id)
+					msh.devices[m.Id] = device
+					msh.log.Warn("Accepted device ", m.Id)
 				}
 			case *message.DeviceDisallowed:
-				if device, found := this.devices[m.Id]; found && device.allowed == true {
+				if device, found := msh.devices[m.Id]; found && device.allowed == true {
 					device.allowed = false
-					this.devices[m.Id] = device
-					this.log.Warn("Evicted device ", m.Id)
+					msh.devices[m.Id] = device
+					msh.log.Warn("Evicted device ", m.Id)
 				}
 			}
 		}
 	}
 }
 
-func (this *Mesher) GetChan() chan proto.Message {
-	return this.message
+// GetChan returns messaging chan
+func (msh *Mesher) GetChan() chan proto.Message {
+	return msh.message
 }
 
-func (this *Mesher) sendMeshState() {
-	for _, device := range this.devices {
+func (msh *Mesher) sendMeshState() {
+	for _, device := range msh.devices {
 		var notification proto.Message
 
 		if device.allowed {
@@ -96,6 +101,6 @@ func (this *Mesher) sendMeshState() {
 		}
 
 		notificationData, _ := message.ToBuffer(notification)
-		this.Messenger.Message <- &message.WriteRequest{DeviceName: "*", Message: notificationData}
+		msh.Messenger.Message <- &message.WriteRequest{DeviceName: "*", Message: notificationData}
 	}
 }

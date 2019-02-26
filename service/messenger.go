@@ -9,6 +9,7 @@ import (
 	"sync"
 )
 
+// Messenger internal messenger service
 type Messenger struct {
 	Message        chan proto.Message
 	log            *logrus.Entry
@@ -16,37 +17,40 @@ type Messenger struct {
 	listenersMutex sync.Mutex
 }
 
-func (this *Messenger) Stop() {
-	this.log.Info("Messenger stopped.")
+// Stop clean service when stopped by supervisor
+func (m *Messenger) Stop() {
+	m.log.Info("Messenger stopped.")
 }
 
-func (this *Messenger) Serve() {
-	this.listeners = make(map[byte][]message.Receiver)
+// Serve main service code
+func (m *Messenger) Serve() {
+	m.listeners = make(map[byte][]message.Receiver)
 
-	this.log = util.GetContextLogger("service/messenger.go", "Services/Messenger")
-	this.log.Info("Messenger starting...")
+	m.log = util.GetContextLogger("service/messenger.go", "Services/Messenger")
+	m.log.Info("Messenger starting...")
 
 	for {
 		select {
-		case msg := <-this.Message:
+		case msg := <-m.Message:
 			opCode, err := message.FindOpCode(msg)
 			if err != nil {
-				this.log.Warn(fmt.Sprintf("Unable to find opCode for message %#v", msg))
+				m.log.Warn(fmt.Sprintf("Unable to find opCode for message %#v", msg))
 			}
 
-			if listeners, ok := this.listeners[opCode]; ok {
+			if listeners, ok := m.listeners[opCode]; ok {
 				for _, listener := range listeners {
 					listener.GetChan() <- msg
 				}
 			} else {
-				this.log.Debug(fmt.Sprintf("Message of type %d received but no listeners was registered", opCode))
+				m.log.Debug(fmt.Sprintf("Message of type %d received but no listeners was registered", opCode))
 			}
 		}
 	}
 }
 
-func (this *Messenger) Register(opCode byte, listener message.Receiver) {
-	this.listenersMutex.Lock()
-	this.listeners[opCode] = append(this.listeners[opCode], listener)
-	this.listenersMutex.Unlock()
+// Register add message listener to listener map
+func (m *Messenger) Register(opCode byte, listener message.Receiver) {
+	m.listenersMutex.Lock()
+	m.listeners[opCode] = append(m.listeners[opCode], listener)
+	m.listenersMutex.Unlock()
 }

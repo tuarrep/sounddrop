@@ -4,6 +4,7 @@ import (
 	"github.com/syncthing/syncthing/lib/protocol"
 )
 
+// ServiceBag various global object injected to services
 type ServiceBag struct {
 	DeviceID protocol.DeviceID
 	Config   *Config
@@ -11,6 +12,7 @@ type ServiceBag struct {
 
 var instance *ServiceBag
 
+// GetServiceBag get servicebag singleton
 func GetServiceBag() *ServiceBag {
 	if instance == nil {
 		config := InitConfig()

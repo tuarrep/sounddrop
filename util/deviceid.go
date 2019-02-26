@@ -8,7 +8,8 @@ import (
 	"github.com/syncthing/syncthing/lib/tlsutil"
 )
 
-func GetMyId() (protocol.DeviceID, error) {
+// GetMyID get device mesh Id
+func GetMyID() (protocol.DeviceID, error) {
 	configDirs := configdir.New("sounddrop", "sounddrop")
 	config := configDirs.QueryFolders(configdir.Global)[0]
 	configPath := config.Path

@@ -2,25 +2,30 @@ package util
 
 import "flag"
 
+// Config store the application
 type Config struct {
 	Discover *DiscoverConfig
 	Mesh     *MeshConfig
 	Streamer *StreamerConfig
 }
 
+// DiscoverConfig peer discovering config
 type DiscoverConfig struct {
 	Port int
 }
 
+// MeshConfig mesh network config
 type MeshConfig struct {
 	AutoAccept bool
 }
 
+// StreamerConfig streamer config
 type StreamerConfig struct {
 	AutoStart   bool
 	PlaylistDir string
 }
 
+// InitConfig load config from flags
 func InitConfig() *Config {
 	discoverPort := flag.Int("port", 19416, "Server port")
 

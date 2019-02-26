@@ -12,6 +12,7 @@ import (
 	"time"
 )
 
+// Streamer audio streamer service
 type Streamer struct {
 	Message   chan proto.Message
 	log       *logrus.Entry
@@ -19,28 +20,30 @@ type Streamer struct {
 	sb        *util.ServiceBag
 }
 
-func (this *Streamer) Stop() {
-	this.log.Info("Streamer stopped.")
+// Stop clean service when stopped by supervisor
+func (s *Streamer) Stop() {
+	s.log.Info("Streamer stopped.")
 }
 
-func (this *Streamer) Serve() {
-	this.log = util.GetContextLogger("service/streamer.go", "Services/Streamer")
-	this.log.Info("Streamer starting...")
+// Serve main service code
+func (s *Streamer) Serve() {
+	s.log = util.GetContextLogger("service/streamer.go", "Services/Streamer")
+	s.log.Info("Streamer starting...")
 
-	this.sb = util.GetServiceBag()
+	s.sb = util.GetServiceBag()
 
-	files, err := ioutil.ReadDir(this.sb.Config.Streamer.PlaylistDir)
-	util.CheckError(err, this.log)
+	files, err := ioutil.ReadDir(s.sb.Config.Streamer.PlaylistDir)
+	util.CheckError(err, s.log)
 
-	this.log.Info(fmt.Sprintf("Streamer started. %d files found", len(files)))
+	s.log.Info(fmt.Sprintf("Streamer started. %d files found", len(files)))
 
 	for _, file := range files {
-		fileData, err := os.Open(fmt.Sprintf("%s/%s", this.sb.Config.Streamer.PlaylistDir, file.Name()))
-		util.CheckError(err, this.log)
+		fileData, err := os.Open(fmt.Sprintf("%s/%s", s.sb.Config.Streamer.PlaylistDir, file.Name()))
+		util.CheckError(err, s.log)
 		stream, format, err := wav.Decode(fileData)
-		util.CheckError(err, this.log)
+		util.CheckError(err, s.log)
 
-		this.log.Info(fmt.Sprintf("Audio format is: channels=%d, sampleRate=%d, precision=%d", format.NumChannels, format.SampleRate, format.Precision))
+		s.log.Info(fmt.Sprintf("Audio format is: channels=%d, sampleRate=%d, precision=%d", format.NumChannels, format.SampleRate, format.Precision))
 
 		buff := make([][2]float64, 512)
 
@@ -60,7 +63,7 @@ func (this *Streamer) Serve() {
 
 			msg := &message.StreamData{SamplesLeft: samplesLeft, SamplesRight: samplesRight}
 			msgData, _ := message.ToBuffer(msg)
-			this.Messenger.Message <- &message.WriteRequest{DeviceName: "*", Message: msgData}
+			s.Messenger.Message <- &message.WriteRequest{DeviceName: "*", Message: msgData}
 
 			time.Sleep(format.SampleRate.D(n))
 		}

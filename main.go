@@ -18,7 +18,7 @@ func main() {
 	log := util.GetContextLogger("main.go", "main")
 
 	log.Info("Starting main process...")
-	myID, err := util.GetMyId()
+	myID, err := util.GetMyID()
 	if err != nil {
 		log.Fatal("Cannot obtain device ID. Aborting startup.", err)
 		os.Exit(-1)

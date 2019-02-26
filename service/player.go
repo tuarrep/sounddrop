@@ -12,6 +12,7 @@ import (
 	"time"
 )
 
+// Player audio player service
 type Player struct {
 	Message   chan proto.Message
 	log       *logrus.Entry
@@ -21,44 +22,47 @@ type Player struct {
 	s         beep.StreamSeekCloser
 }
 
-func (this *Player) Stop() {
-	this.log.Info("Player stopped.")
+// Stop clean service when stopped by supervisor
+func (p *Player) Stop() {
+	p.log.Info("Player stopped.")
 }
 
-func (this *Player) Serve() {
-	this.log = util.GetContextLogger("service/player.go", "Services/Player")
-	this.log.Info("Player starting...")
+// Serve main service code
+func (p *Player) Serve() {
+	p.log = util.GetContextLogger("service/player.go", "Services/Player")
+	p.log.Info("Player starting...")
 
-	this.Message = make(chan proto.Message)
-	this.Messenger.Register(message.StreamDataMessage, this)
-	this.format = beep.Format{SampleRate: 44100, NumChannels: 2, Precision: 2}
-	this.data = make([][2]float64, this.format.SampleRate.N(5*time.Second))
+	p.Message = make(chan proto.Message)
+	p.Messenger.Register(message.StreamDataMessage, p)
+	p.format = beep.Format{SampleRate: 44100, NumChannels: 2, Precision: 2}
+	p.data = make([][2]float64, p.format.SampleRate.N(5*time.Second))
 
 	f, _ := os.Open("test.wav")
-	this.s, _, _ = wav.Decode(f)
-	//this.s.Stream(this.data)
+	p.s, _, _ = wav.Decode(f)
+	//p.s.Stream(p.data)
 
-	_ = speaker.Init(this.format.SampleRate, this.format.SampleRate.N(time.Second/10))
-	speaker.Play(beep.Seq(this, beep.Callback(func() {
-		this.log.Warn("Speaker ended stream. This should not have happened!")
+	_ = speaker.Init(p.format.SampleRate, p.format.SampleRate.N(time.Second/10))
+	speaker.Play(beep.Seq(p, beep.Callback(func() {
+		p.log.Warn("Speaker ended stream. This should not have happened!")
 	})))
 
 	for {
 		select {
-		case msg := <-this.Message:
+		case msg := <-p.Message:
 			switch m := msg.(type) {
 			case *message.StreamData:
-				go this.handleStreamData(m)
+				go p.handleStreamData(m)
 			}
 		}
 	}
 }
 
-func (this *Player) GetChan() chan proto.Message {
-	return this.Message
+// GetChan returns messaging chan
+func (p *Player) GetChan() chan proto.Message {
+	return p.Message
 }
 
-func (this *Player) handleStreamData(m *message.StreamData) {
+func (p *Player) handleStreamData(m *message.StreamData) {
 	bufferLength := len(m.SamplesRight)
 	if bufferLength > len(m.SamplesLeft) {
 		bufferLength = len(m.SamplesLeft)
@@ -70,27 +74,29 @@ func (this *Player) handleStreamData(m *message.StreamData) {
 		samples[i] = [2]float64{m.SamplesLeft[i], m.SamplesRight[i]}
 	}
 
-	this.data = append(this.data, samples...)
+	p.data = append(p.data, samples...)
 }
 
-func (this *Player) Stream(samples [][2]float64) (n int, ok bool) {
+// Stream stream audio samples from received data
+func (p *Player) Stream(samples [][2]float64) (n int, ok bool) {
 	realLength := len(samples)
-	if realLength > len(this.data) {
-		realLength = len(this.data)
+	if realLength > len(p.data) {
+		realLength = len(p.data)
 	}
 
-	fetchedSamples := this.data[:realLength]
+	fetchedSamples := p.data[:realLength]
 
 	for i := 0; i < len(fetchedSamples); i++ {
 		samples[i][0] = fetchedSamples[i][0]
 		samples[i][1] = fetchedSamples[i][1]
 	}
 
-	this.data = this.data[realLength:]
+	p.data = p.data[realLength:]
 
 	return len(samples), len(samples) > 0
 }
 
-func (this *Player) Err() error {
+// Err return streaming error (never)
+func (p *Player) Err() error {
 	return nil
 }

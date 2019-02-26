@@ -6,12 +6,15 @@ import (
 	"reflect"
 )
 
+// Receiver interface of a internal message receiver
 type Receiver interface {
 	GetChan() chan proto.Message
 }
 
+// ServiceNumber service identifier on mesh network. Insure protocol compatibility of all devices on mesh
 const ServiceNumber uint32 = 0xECC377BC
 
+// Messages opCodes
 const (
 	AnnounceMessage         = 0x00
 	DeviceAllowedMessage    = 0x10
@@ -22,6 +25,7 @@ const (
 	WriteRequestMessage     = 0xF2
 )
 
+// FromBuffer get message instance from raw bytes buffer
 func FromBuffer(buffer []byte) (proto.Message, error) {
 	if len(buffer) < 1 {
 		return nil, nil
@@ -47,6 +51,7 @@ func FromBuffer(buffer []byte) (proto.Message, error) {
 	return message, err
 }
 
+// ToBuffer get bytes buffer from message instance
 func ToBuffer(message proto.Message) ([]byte, error) {
 	opcode, err := FindOpCode(message)
 	if err != nil {
@@ -61,6 +66,7 @@ func ToBuffer(message proto.Message) ([]byte, error) {
 	return append([]byte{opcode}, data...), nil
 }
 
+// FindOpCode message opCode from message type
 func FindOpCode(message proto.Message) (byte, error) {
 	var opcode byte
 
