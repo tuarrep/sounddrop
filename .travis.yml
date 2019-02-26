@@ -14,6 +14,7 @@ matrix:
     - go: tip
 before_install:
   - go get github.com/mitchellh/gox
+  - sudo apt update && sudo apt install -y libasound2-dev
 install:
   -
 script:
