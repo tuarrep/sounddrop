@@ -1,0 +1,38 @@
+language: go
+sudo: false
+matrix:
+  include:
+    - go: 1.x
+      env: LATEST=true
+    - go: 1.7.x
+    - go: 1.8.x
+    - go: 1.9.x
+    - go: 1.10.x
+    - go: 1.11.x
+    - go: tip
+  allow_failures:
+    - go: tip
+before_install:
+  - go get github.com/mitchellh/gox
+install:
+  -
+script:
+  - go get -t -v ./...
+  - diff -u <(echo -n) <(gofmt -d .)
+  - go vet $(go list ./... | grep -v /vendor/)
+  - go test -v -race ./...
+  - if [ "${LATEST}" = "true" ]; then gox -os="linux darwin windows" -arch="amd64" -output="soundddrop.{{.OS}}.{{.Arch}}"
+    -ldflags "-X main.Rev=`git rev-parse --short HEAD`" -verbose ./...; fi
+deploy:
+  provider: releases
+  skip_cleanup: true
+  api_key:
+    secure: rjdZMydbse7SSHN4lfS/3irzfDQCDI03VSDmelyrvjdVsj2mNQDdyQuVf1xrAgYmH79oZaJcXS2dBnB+vbIz3ca0RHKHIOzEazzWjUn95kugtGkMCiSHH0EIAXuAWSLUwZe/Qo5iHEfL77JfWERMfPN74ZKheHH49B+XDBMde9IhJL4DtcweJRZwsMMrhA8csizmhX1hDXfqMFPLkXCG0bC/jItbx04dJIlMQMz4ESwpD8OBgvQrkGz6FRqfmS3VpMFS/J4IeCzNSQla0fwS2dVu9ZMRglc4nicU7f21NYloRQjhyJIKmHgOo6ycNBAwg7TuiXH7wuFnFR+m89VgxxdGemoQ2xMy4M9OsFMrxqJyIx8YDBYWL4PDIxiJpYKuOamPXNhnvAMALv++aLSMkHNchj7shuz1hxwRbWkxFe+V5StsxRK2tQhu/k74r8JRkw98DuoNNec+CVsFlXYPT0r8QG3Ms98Y0URonyhwIuhQ22hYN0B99P+2HWmLdlQHBPXcqUkV3yhljbbpgufTFEjFfnr2cGXtOZc/Ey5UsNMA5kZTx+05rQLswCwemwkoasvfwJXDlgb0Oqi9s8j9oaQ75Y1RWpJpA8ydrxd4kK7Dx+ZmfeESyqrgIZD4a8QQdjqJatbWxm7KvV2SWQnMxcqUXll6SYwEFGIlvWL7dl8=
+  file:
+    - sounddrop.windows.amd64.exe
+    - sounddrop.darwin.amd64
+    - sounddrop.linux.amd64
+  on:
+    repo: mafzst/sounddrop
+    tags: true
+    condition: $LATEST = true

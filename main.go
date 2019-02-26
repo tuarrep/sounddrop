@@ -8,6 +8,8 @@ import (
 	"github.com/mafzst/sounddrop/service"
 	"github.com/mafzst/sounddrop/util"
 )
+// Rev is set on build time and should contain the git commit
+var rev = ""
 
 func main() {
 	util.InitLogger()
@@ -50,7 +52,7 @@ func main() {
 
 	supervisor.ServeBackground()
 
-	log.Info("Main process started.")
+	log.Info("Main process started. Revision: ", rev)
 
 	for {
 		select {
