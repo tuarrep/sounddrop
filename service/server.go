@@ -140,7 +140,7 @@ func (this *Server) sendAnnounce() {
 func (this *Server) checkPeersHealth() {
 	for id, device := range this.peers {
 		if time.Now().After(device.lastSeen.Add(3 * tickInterval)) {
-			this.log.Warn(fmt.Sprintf("Device %this not announced since a while. Romoving it from known peers.", id))
+			this.log.Warn(fmt.Sprintf("Device %s not announced since a while. Romoving it from known peers.", id))
 			delete(this.peers, id)
 			notification := &message.PeerOffline{Id: id}
 			this.Messenger.Message <- notification
