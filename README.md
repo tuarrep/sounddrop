@@ -8,20 +8,37 @@ It's designed to run on multiple devices and allows them to discover themselves 
 User can after create group of devices to share sound between them.
 
 ## Basic usage
-**Versions of go prior to 1.8 aren't supported**
-```bash
-go get ./...
+> Binaries are availables on [releases page](https://github.com/tuarrep/sounddrop/releases/)
+## Warnings
+- **Versions of go prior to 1.8 aren't supported**
+- **Only wave files sampled at 44100Hz are supported**
+- **`playlist-dir` must only contains supported wave files**
 
+### Usage
+```bash
 # on a device with sound files
-go run main.go -auto-accept -auto-start-stream -playlist-dir=/path/to/sounds/folder
+./sounddrop.linux.amd64 -auto-accept -auto-start-stream -playlist-dir=/path/to/sounds/folder
 
 # on the others devices (on the same network)
-go run main.go 
+./sounddrop.linux.amd64
+```
+
+### CLI reference
+```
+  -auto-accept
+        Auto accept discovered devices
+  -auto-start-stream
+        Auto start audio stream
+  -playlist-dir string
+        Directory containing audio files to play (default ".")
+  -port int
+        Server port (default 19416)
+
 ```
 
 ## Author
 
-Nicolas Perraut - [@mafzst](https://github.com/mafzst)
+Nicolas Perraut - [@tuarrep](https://github.com/tuarrep)
 
 
 ## License
