@@ -13,6 +13,7 @@ matrix:
     - go: tip
 before_install:
   - go get github.com/mitchellh/gox
+  - go get github.com/konsorten/go-windows-terminal-sequences # For windows build
   - sudo apt update && sudo apt install -y libasound2-dev
 install:
   -
@@ -29,7 +30,6 @@ deploy:
     secure: rjdZMydbse7SSHN4lfS/3irzfDQCDI03VSDmelyrvjdVsj2mNQDdyQuVf1xrAgYmH79oZaJcXS2dBnB+vbIz3ca0RHKHIOzEazzWjUn95kugtGkMCiSHH0EIAXuAWSLUwZe/Qo5iHEfL77JfWERMfPN74ZKheHH49B+XDBMde9IhJL4DtcweJRZwsMMrhA8csizmhX1hDXfqMFPLkXCG0bC/jItbx04dJIlMQMz4ESwpD8OBgvQrkGz6FRqfmS3VpMFS/J4IeCzNSQla0fwS2dVu9ZMRglc4nicU7f21NYloRQjhyJIKmHgOo6ycNBAwg7TuiXH7wuFnFR+m89VgxxdGemoQ2xMy4M9OsFMrxqJyIx8YDBYWL4PDIxiJpYKuOamPXNhnvAMALv++aLSMkHNchj7shuz1hxwRbWkxFe+V5StsxRK2tQhu/k74r8JRkw98DuoNNec+CVsFlXYPT0r8QG3Ms98Y0URonyhwIuhQ22hYN0B99P+2HWmLdlQHBPXcqUkV3yhljbbpgufTFEjFfnr2cGXtOZc/Ey5UsNMA5kZTx+05rQLswCwemwkoasvfwJXDlgb0Oqi9s8j9oaQ75Y1RWpJpA8ydrxd4kK7Dx+ZmfeESyqrgIZD4a8QQdjqJatbWxm7KvV2SWQnMxcqUXll6SYwEFGIlvWL7dl8=
   file:
     - sounddrop.windows.amd64.exe
-    - sounddrop.darwin.amd64
     - sounddrop.linux.amd64
   on:
     repo: mafzst/sounddrop
