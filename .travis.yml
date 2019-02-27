@@ -32,6 +32,6 @@ deploy:
     - sounddrop.windows.amd64.exe
     - sounddrop.linux.amd64
   on:
-    repo: mafzst/sounddrop
+    repo: tuarrep/sounddrop
     tags: true
     condition: $LATEST = true
