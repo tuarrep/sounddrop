@@ -2,8 +2,11 @@ package service
 
 import (
 	"fmt"
+	"github.com/faiface/beep"
+	"github.com/faiface/beep/mp3"
 	"github.com/faiface/beep/wav"
 	"github.com/golang/protobuf/proto"
+	"github.com/h2non/filetype"
 	"github.com/mafzst/sounddrop/message"
 	"github.com/mafzst/sounddrop/util"
 	"github.com/sirupsen/logrus"
@@ -39,10 +42,34 @@ func (s *Streamer) Serve() {
 
 	for _, file := range files {
 		fileData, err := os.Open(fmt.Sprintf("%s/%s", s.sb.Config.Streamer.PlaylistDir, file.Name()))
-		util.CheckError(err, s.log)
-		stream, format, err := wav.Decode(fileData)
-		util.CheckError(err, s.log)
+		//util.CheckError(err, s.log)
 
+		head := make([]byte, 261)
+		_, err = fileData.Read(head)
+
+		if err != nil {
+			s.log.Warn(fmt.Sprintf("File %s seems corrupted", file.Name()))
+			continue
+		}
+
+		ft, err := filetype.Match(head)
+
+		if ft == filetype.Unknown {
+			continue
+		}
+
+		var stream beep.StreamCloser
+		var format beep.Format
+
+		s.log.Debug(fmt.Sprintf("File %s has type %s", file.Name(), ft.MIME.Value))
+
+		if ft.MIME.Value == "audio/x-xav" {
+			stream, format, err = wav.Decode(fileData)
+			util.CheckError(err, s.log)
+		} else if ft.MIME.Value == "audio/mpeg" {
+			stream, format, err = mp3.Decode(fileData)
+			util.CheckError(err, s.log)
+		}
 		s.log.Info(fmt.Sprintf("Audio format is: channels=%d, sampleRate=%d, precision=%d", format.NumChannels, format.SampleRate, format.Precision))
 
 		buff := make([][2]float64, 512)
@@ -67,5 +94,7 @@ func (s *Streamer) Serve() {
 
 			time.Sleep(format.SampleRate.D(n))
 		}
+
+		_ = fileData.Close()
 	}
 }
