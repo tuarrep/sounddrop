@@ -48,9 +48,16 @@ func (m *Messenger) Serve() {
 	}
 }
 
-// Register add message listener to listener map
+// Register add message listener to listener map for one opCode
 func (m *Messenger) Register(opCode byte, listener message.Receiver) {
 	m.listenersMutex.Lock()
 	m.listeners[opCode] = append(m.listeners[opCode], listener)
 	m.listenersMutex.Unlock()
+}
+
+// RegisterSome add message listener to listener map for multiple opCode
+func (m *Messenger) RegisterSome(opCodes []byte, receiver message.Receiver) {
+	for _, opCode := range opCodes {
+		m.Register(opCode, receiver)
+	}
 }

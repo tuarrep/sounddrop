@@ -37,9 +37,8 @@ func (msh *Mesher) Serve() {
 	msh.sb = util.GetServiceBag()
 	msh.message = make(chan proto.Message)
 	msh.devices = make(map[string]*Device)
-	msh.Messenger.Register(message.PeerOnlineMessage, msh)
-	msh.Messenger.Register(message.PeerOfflineMessage, msh)
-	msh.Messenger.Register(message.DeviceAllowedMessage, msh)
+
+	msh.Messenger.RegisterSome([]byte{message.PeerOnlineMessage, message.PeerOfflineMessage, message.DeviceAllowedMessage, message.DeviceDisallowedMessage}, msh)
 
 	msh.devices[msh.sb.DeviceID.String()] = &Device{id: msh.sb.DeviceID.String(), online: true, allowed: msh.sb.Config.Mesh.AutoAccept}
 
@@ -48,39 +47,55 @@ func (msh *Mesher) Serve() {
 		case msg := <-msh.message:
 			switch m := msg.(type) {
 			case *message.PeerOnline:
-				if device, found := msh.devices[m.Id]; found {
-					device.online = true
-					msh.devices[m.Id] = device
-					msh.log.Warn("Online device ", m.Id)
-				} else {
-					device := &Device{id: m.Id, online: true, allowed: msh.sb.Config.Mesh.AutoAccept}
-					msh.devices[m.Id] = device
-					msh.log.Debug("New device ", device.id)
-
-					if msh.sb.Config.Mesh.AutoAccept {
-						msh.log.Warn("Auto accepting device ", m.Id)
-						msh.sendMeshState()
-					}
-				}
+				msh.handlePeerOnline(m)
 			case *message.PeerOffline:
-				if device, found := msh.devices[m.Id]; found {
-					device.online = false
-					msh.devices[m.Id] = device
-					msh.log.Warn("Offline device ", m.Id)
-				}
+				msh.handlePeerOffline(m)
 			case *message.DeviceAllowed:
-				if device, found := msh.devices[m.Id]; found && device.allowed == false {
-					device.allowed = true
-					msh.devices[m.Id] = device
-					msh.log.Warn("Accepted device ", m.Id)
-				}
+				msh.handleDeviceAlowed(m)
 			case *message.DeviceDisallowed:
-				if device, found := msh.devices[m.Id]; found && device.allowed == true {
-					device.allowed = false
-					msh.devices[m.Id] = device
-					msh.log.Warn("Evicted device ", m.Id)
-				}
+				msh.handleDeviceDisallowed(m)
 			}
+		}
+	}
+}
+
+func (msh *Mesher) handleDeviceDisallowed(m *message.DeviceDisallowed) {
+	if device, found := msh.devices[m.Id]; found && device.allowed == true {
+		device.allowed = false
+		msh.devices[m.Id] = device
+		msh.log.Warn("Evicted device ", m.Id)
+	}
+}
+
+func (msh *Mesher) handleDeviceAlowed(m *message.DeviceAllowed) {
+	if device, found := msh.devices[m.Id]; found && device.allowed == false {
+		device.allowed = true
+		msh.devices[m.Id] = device
+		msh.log.Warn("Accepted device ", m.Id)
+	}
+}
+
+func (msh *Mesher) handlePeerOffline(m *message.PeerOffline) {
+	if device, found := msh.devices[m.Id]; found {
+		device.online = false
+		msh.devices[m.Id] = device
+		msh.log.Warn("Offline device ", m.Id)
+	}
+}
+
+func (msh *Mesher) handlePeerOnline(m *message.PeerOnline) {
+	if device, found := msh.devices[m.Id]; found {
+		device.online = true
+		msh.devices[m.Id] = device
+		msh.log.Warn("Online device ", m.Id)
+	} else {
+		device := &Device{id: m.Id, online: true, allowed: msh.sb.Config.Mesh.AutoAccept}
+		msh.devices[m.Id] = device
+		msh.log.Debug("New device ", device.id)
+
+		if msh.sb.Config.Mesh.AutoAccept {
+			msh.log.Warn("Auto accepting device ", m.Id)
+			msh.sendMeshState()
 		}
 	}
 }
