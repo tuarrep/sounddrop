@@ -3,9 +3,9 @@ package service
 import (
 	"fmt"
 	"github.com/golang/protobuf/proto"
-	"github.com/mafzst/sounddrop/message"
-	"github.com/mafzst/sounddrop/util"
 	"github.com/sirupsen/logrus"
+	"github.com/tuarrep/sounddrop/message"
+	"github.com/tuarrep/sounddrop/util"
 	"sync"
 )
 

@@ -2,9 +2,9 @@ package main
 
 import (
 	"github.com/golang/protobuf/proto"
-	"github.com/mafzst/sounddrop/service"
-	"github.com/mafzst/sounddrop/util"
 	"github.com/thejerf/suture"
+	"github.com/tuarrep/sounddrop/service"
+	"github.com/tuarrep/sounddrop/util"
 	"os"
 	"os/signal"
 )
