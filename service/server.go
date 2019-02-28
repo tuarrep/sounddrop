@@ -65,25 +65,29 @@ func (srv *Server) Serve() {
 			srv.sendAnnounce()
 			srv.checkPeersHealth()
 		case msg := <-srv.message:
-			switch m := msg.(type) {
-			case *message.WriteRequest:
-				var addresses []*net.UDPAddr
+			srv.handleMessages(msg)
+		}
+	}
+}
 
-				if m.DeviceName == "*" {
-					for _, peer := range srv.peers {
-						addresses = append(addresses, peer.address)
-					}
-				} else if peer, exists := srv.peers[m.DeviceName]; exists {
-					addresses = append(addresses, peer.address)
-				}
+func (srv *Server) handleMessages(msg proto.Message) {
+	switch m := msg.(type) {
+	case *message.WriteRequest:
+		var addresses []*net.UDPAddr
 
-				for _, address := range addresses {
-					_, err := srv.sc.WriteToUDP(m.Message, address)
+		if m.DeviceName == "*" {
+			for _, peer := range srv.peers {
+				addresses = append(addresses, peer.address)
+			}
+		} else if peer, exists := srv.peers[m.DeviceName]; exists {
+			addresses = append(addresses, peer.address)
+		}
 
-					if err != nil {
-						srv.log.Warn(fmt.Sprintf("Failed to send message %d due to %v", m.Message[0], err.Error()))
-					}
-				}
+		for _, address := range addresses {
+			_, err := srv.sc.WriteToUDP(m.Message, address)
+
+			if err != nil {
+				srv.log.Warn(fmt.Sprintf("Failed to send message %d due to %v", m.Message[0], err.Error()))
 			}
 		}
 	}
