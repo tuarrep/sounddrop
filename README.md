@@ -11,8 +11,7 @@ User can after create group of devices to share sound between them.
 > Binaries are availables on [releases page](https://github.com/tuarrep/sounddrop/releases/)
 ## Warnings
 - **Versions of go prior to 1.8 aren't supported**
-- **Only wave files sampled at 44100Hz are supported**
-- **`playlist-dir` must only contains supported wave files**
+- **Only wave and mp3 files sampled at 44100Hz are supported**
 
 ### Usage
 ```bash
