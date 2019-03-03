@@ -2,7 +2,10 @@ syntax = "proto3";
 
 package message;
 
+import "google/protobuf/timestamp.proto";
+
 message StreamData {
     repeated double samplesLeft = 1;
     repeated double samplesRight = 2;
+    google.protobuf.Timestamp nextAt = 3;
 }

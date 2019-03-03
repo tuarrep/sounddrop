@@ -43,12 +43,12 @@ func main() {
 	mesher := &service.Mesher{Messenger: messenger}
 	supervisor.Add(mesher)
 
-	player := &service.Player{Messenger: messenger}
-	supervisor.Add(player)
-
 	if sb.Config.Streamer.AutoStart {
 		streamer := &service.Streamer{Messenger: messenger}
 		supervisor.Add(streamer)
+	} else {
+		player := &service.Player{Messenger: messenger}
+		supervisor.Add(player)
 	}
 
 	supervisor.ServeBackground()

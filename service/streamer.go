@@ -6,6 +6,7 @@ import (
 	"github.com/faiface/beep/mp3"
 	"github.com/faiface/beep/wav"
 	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes"
 	"github.com/h2non/filetype"
 	"github.com/sirupsen/logrus"
 	"github.com/tuarrep/sounddrop/message"
@@ -75,7 +76,10 @@ func (s *Streamer) getStream(file os.FileInfo) (beep.StreamCloser, beep.Format, 
 
 	s.log.Debug(fmt.Sprintf("File %s has type %s", file.Name(), ft.MIME.Value))
 
-	if ft.MIME.Value == "audio/x-xav" {
+	//FIXME: The head was removed from the first file data to detect file type, we surely can add it back instead of reopening file ?
+	fileData, err = os.Open(fmt.Sprintf("%s/%s", s.sb.Config.Streamer.PlaylistDir, file.Name()))
+	util.CheckError(err, s.log)
+	if ft.MIME.Value == "audio/x-wav" {
 		stream, format, err = wav.Decode(fileData)
 		util.CheckError(err, s.log)
 	} else if ft.MIME.Value == "audio/mpeg" {
@@ -89,7 +93,6 @@ func (s *Streamer) getStream(file os.FileInfo) (beep.StreamCloser, beep.Format, 
 
 func (s *Streamer) streamToMessage(stream beep.StreamCloser, format beep.Format) {
 	buff := make([][2]float64, 512)
-
 	ok := true
 	n := 512
 
@@ -104,10 +107,14 @@ func (s *Streamer) streamToMessage(stream beep.StreamCloser, format beep.Format)
 			samplesRight[i] = buff[i][1]
 		}
 
-		msg := &message.StreamData{SamplesLeft: samplesLeft, SamplesRight: samplesRight}
+		nextRunIn := format.SampleRate.D(n)
+		nextRunAtOffset := time.Now().Add(nextRunIn * 5)
+		nextRunAtProto, _ := ptypes.TimestampProto(nextRunAtOffset)
+
+		msg := &message.StreamData{SamplesLeft: samplesLeft, SamplesRight: samplesRight, NextAt: nextRunAtProto}
 		msgData, _ := message.ToBuffer(msg)
 		s.Messenger.Message <- &message.WriteRequest{DeviceName: "*", Message: msgData}
 
-		time.Sleep(format.SampleRate.D(n))
+		time.Sleep(nextRunIn)
 	}
 }

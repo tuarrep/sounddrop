@@ -3,13 +3,12 @@ package service
 import (
 	"github.com/faiface/beep"
 	"github.com/faiface/beep/speaker"
-	"github.com/faiface/beep/wav"
 	"github.com/golang/protobuf/proto"
 	"github.com/sirupsen/logrus"
 	"github.com/tuarrep/sounddrop/message"
+	"github.com/tuarrep/sounddrop/structure"
 	"github.com/tuarrep/sounddrop/util"
-	"os"
-	"time"
+	"sync"
 )
 
 // Player audio player service
@@ -19,7 +18,9 @@ type Player struct {
 	Messenger *Messenger
 	format    beep.Format
 	data      [][2]float64
-	s         beep.StreamSeekCloser
+	tsq       *structure.TimedSampleQueue
+	samples   chan *message.StreamData
+	dataMutex sync.Mutex
 }
 
 // Stop clean service when stopped by supervisor
@@ -35,14 +36,16 @@ func (p *Player) Serve() {
 	p.Message = make(chan proto.Message)
 	p.Messenger.Register(message.StreamDataMessage, p)
 	p.format = beep.Format{SampleRate: 44100, NumChannels: 2, Precision: 2}
-	p.data = make([][2]float64, p.format.SampleRate.N(5*time.Second))
+	p.data = make([][2]float64, 0)
+	p.tsq = structure.NewTimedSampleQueue()
+	p.samples = make(chan *message.StreamData)
+	p.tsq.Subscribe(p.samples)
+	p.dataMutex = sync.Mutex{}
 
-	f, _ := os.Open("test.wav")
-	p.s, _, _ = wav.Decode(f)
-	//p.s.Stream(p.data)
-
-	_ = speaker.Init(p.format.SampleRate, p.format.SampleRate.N(time.Second/10))
-	speaker.Play(beep.Seq(p, beep.Callback(func() {
+	_ = speaker.Init(p.format.SampleRate, 512)
+	speaker.Play(beep.Seq(beep.Callback(func() {
+		p.tsq.Start()
+	}), p, beep.Callback(func() {
 		p.log.Warn("Speaker ended stream. This should not have happened!")
 	})))
 
@@ -51,8 +54,10 @@ func (p *Player) Serve() {
 		case msg := <-p.Message:
 			switch m := msg.(type) {
 			case *message.StreamData:
-				go p.handleStreamData(m)
+				p.tsq.Push(m)
 			}
+		case sample := <-p.samples:
+			go p.handleStreamData(sample)
 		}
 	}
 }
@@ -74,16 +79,26 @@ func (p *Player) handleStreamData(m *message.StreamData) {
 		samples[i] = [2]float64{m.SamplesLeft[i], m.SamplesRight[i]}
 	}
 
-	p.data = append(p.data, samples...)
+	keepSamplesNb := len(p.data) - len(samples)
+	if keepSamplesNb < 0 {
+		keepSamplesNb = 0
+	}
+
+	p.dataMutex.Lock()
+	defer p.dataMutex.Unlock()
+	p.data = append(p.data[keepSamplesNb:], samples...)
 }
 
 // Stream stream audio samples from received data
 func (p *Player) Stream(samples [][2]float64) (n int, ok bool) {
 	realLength := len(samples)
 	if realLength > len(p.data) {
+		//fmt.Print("!")
 		realLength = len(p.data)
 	}
 
+	p.dataMutex.Lock()
+	defer p.dataMutex.Unlock()
 	fetchedSamples := p.data[:realLength]
 
 	for i := 0; i < len(fetchedSamples); i++ {
