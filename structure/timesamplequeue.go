@@ -6,22 +6,27 @@ import (
 	"time"
 )
 
-// TimedSampleQueue buffers samples and emits them at exact playing time
+type queueable struct {
+	popAt  time.Time
+	sample *message.StreamData
+}
+
+// TimedSampleQueue buffers queueables and emits them at exact playing time
 type TimedSampleQueue struct {
-	samples         []*message.StreamData
+	queueables      []*queueable
 	subscribers     map[int]chan *message.StreamData
 	subscriberCount int
 	started         bool
 }
 
 // Push adds a sample to queue
-func (tsq *TimedSampleQueue) Push(sample *message.StreamData) int {
-	tsq.samples = append(tsq.samples, sample)
+func (tsq *TimedSampleQueue) Push(sample *message.StreamData, popAt time.Time) int {
+	tsq.queueables = append(tsq.queueables, &queueable{sample: sample, popAt: popAt})
 
-	return len(tsq.samples)
+	return len(tsq.queueables)
 }
 
-// Subscribe adds subscriber to send it samples
+// Subscribe adds subscriber to send it queueables
 func (tsq *TimedSampleQueue) Subscribe(subscriber chan *message.StreamData) int {
 	tsq.subscribers[tsq.subscriberCount] = subscriber
 
@@ -36,7 +41,7 @@ func (tsq *TimedSampleQueue) Unsubscribe(sid int) {
 	delete(tsq.subscribers, sid)
 }
 
-// Start emitting samples
+// Start emitting queueables
 func (tsq *TimedSampleQueue) Start() {
 	if tsq.started {
 		return
@@ -52,7 +57,7 @@ func (tsq *TimedSampleQueue) loop() {
 
 		if pop {
 			nextTime, _ := ptypes.Timestamp(next.NextAt)
-			if nextTime.Before(time.Now().Add(6*time.Millisecond)) && nextTime.After(time.Now().Add(-6*time.Millisecond)) {
+			if nextTime.Before(time.Now().Add(1*time.Millisecond)) && nextTime.After(time.Now().Add(-9*time.Millisecond)) {
 				for _, subscriber := range tsq.subscribers {
 					subscriber <- next
 				}
@@ -67,7 +72,7 @@ func (tsq *TimedSampleQueue) loop() {
 
 		if pop, streamData := tsq.pop(false); pop {
 			nextTime, _ := ptypes.Timestamp(streamData.NextAt)
-			time.Sleep(time.Until(nextTime.Add(-5 * time.Millisecond)))
+			time.Sleep(time.Until(nextTime.Add(-8 * time.Millisecond)))
 		} else {
 			time.Sleep(1 * time.Millisecond)
 		}
@@ -75,20 +80,20 @@ func (tsq *TimedSampleQueue) loop() {
 }
 
 func (tsq *TimedSampleQueue) pop(remove bool) (bool, *message.StreamData) {
-	if len(tsq.samples) == 0 {
+	if len(tsq.queueables) == 0 {
 		return false, nil
 	}
 
-	sample := tsq.samples[0]
+	queueable := tsq.queueables[0]
 
 	if remove {
-		tsq.samples = tsq.samples[1:]
+		tsq.queueables = tsq.queueables[1:]
 	}
 
-	return true, sample
+	return true, queueable.sample
 }
 
 // NewTimedSampleQueue creates an new TimedSampleQueue
 func NewTimedSampleQueue() *TimedSampleQueue {
-	return &TimedSampleQueue{samples: make([]*message.StreamData, 0), subscribers: map[int]chan *message.StreamData{}, subscriberCount: 0, started: false}
+	return &TimedSampleQueue{queueables: make([]*queueable, 0), subscribers: map[int]chan *message.StreamData{}, subscriberCount: 0, started: false}
 }

@@ -4,6 +4,7 @@ import (
 	"github.com/faiface/beep"
 	"github.com/faiface/beep/speaker"
 	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes"
 	"github.com/sirupsen/logrus"
 	"github.com/tuarrep/sounddrop/message"
 	"github.com/tuarrep/sounddrop/structure"
@@ -54,7 +55,8 @@ func (p *Player) Serve() {
 		case msg := <-p.Message:
 			switch m := msg.(type) {
 			case *message.StreamData:
-				p.tsq.Push(m)
+				popAt, _ := ptypes.Timestamp(m.NextAt)
+				p.tsq.Push(m, popAt)
 			}
 		case sample := <-p.samples:
 			go p.handleStreamData(sample)
