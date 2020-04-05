@@ -6,7 +6,6 @@ import (
 	"github.com/faiface/beep/mp3"
 	"github.com/faiface/beep/wav"
 	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes"
 	"github.com/h2non/filetype"
 	"github.com/sirupsen/logrus"
 	"github.com/tuarrep/sounddrop/message"
@@ -108,10 +107,10 @@ func (s *Streamer) streamToMessage(stream beep.StreamCloser, format beep.Format)
 		}
 
 		nextRunIn := format.SampleRate.D(n)
-		nextRunAtOffset := time.Now().Add(nextRunIn * 5)
-		nextRunAtProto, _ := ptypes.TimestampProto(nextRunAtOffset)
+		nextRunAt := time.Now().UnixNano() + int64(1*time.Second)
 
-		msg := &message.StreamData{SamplesLeft: samplesLeft, SamplesRight: samplesRight, NextAt: nextRunAtProto}
+		msg := &message.StreamData{SamplesLeft: samplesLeft, SamplesRight: samplesRight, NextAt: nextRunAt}
+		s.Messenger.Message <- msg
 		msgData, _ := message.ToBuffer(msg)
 		s.Messenger.Message <- &message.WriteRequest{DeviceName: "*", Message: msgData}
 
