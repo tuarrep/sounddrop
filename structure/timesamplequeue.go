@@ -2,6 +2,7 @@ package structure
 
 import "sync"
 
+// Queue to store received samples and keeping their scheduled times
 type TimedSampleQueue struct {
 	buffer []timedSample
 	head   int
@@ -12,6 +13,7 @@ type TimedSampleQueue struct {
 	tailMutex sync.RWMutex
 }
 
+// Add a timed sample at the end of the queue
 func (q *TimedSampleQueue) Add(sample [2]float64, time int64) {
 	q.headMutex.Lock()
 	defer q.headMutex.Unlock()
@@ -24,6 +26,7 @@ func (q *TimedSampleQueue) Add(sample [2]float64, time int64) {
 	q.cond.Broadcast()
 }
 
+// Get the first timed sample and remove it from the queue
 func (q *TimedSampleQueue) Remove() (sample [2]float64, time int64) {
 	q.tailMutex.Lock()
 	defer q.tailMutex.Unlock()
@@ -37,6 +40,7 @@ func (q *TimedSampleQueue) Remove() (sample [2]float64, time int64) {
 	return v.sample, v.time
 }
 
+// Get the first timed sample without removing it from the queue
 func (q *TimedSampleQueue) Peek() (sample [2]float64, time int64) {
 	q.tailMutex.RLock()
 	defer q.tailMutex.RUnlock()
@@ -47,6 +51,7 @@ func (q *TimedSampleQueue) Peek() (sample [2]float64, time int64) {
 	return v.sample, v.time
 }
 
+// Get queue length
 func (q *TimedSampleQueue) Len() int {
 	q.tailMutex.RLock()
 	defer q.tailMutex.RUnlock()
@@ -58,6 +63,7 @@ func (q *TimedSampleQueue) Len() int {
 	return q.head - q.tail + 2*len(q.buffer)
 }
 
+// Get the queue capacity
 func (q *TimedSampleQueue) Cap() int {
 	return len(q.buffer)
 }
@@ -91,6 +97,7 @@ func (q *TimedSampleQueue) waitNotEmpty() {
 	q.cond.L.Unlock()
 }
 
+// Create a new queue of specified size
 func NewTimedSampleQueue(size int) *TimedSampleQueue {
 	return &TimedSampleQueue{buffer: make([]timedSample, size), head: 0, tail: 0, cond: sync.NewCond(&sync.Mutex{})}
 }
