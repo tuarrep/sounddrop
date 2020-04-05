@@ -1,15 +1,16 @@
 package service
 
 import (
+	"fmt"
 	"github.com/faiface/beep"
 	"github.com/faiface/beep/speaker"
 	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes"
 	"github.com/sirupsen/logrus"
 	"github.com/tuarrep/sounddrop/message"
 	"github.com/tuarrep/sounddrop/structure"
 	"github.com/tuarrep/sounddrop/util"
-	"sync"
+	"math"
+	"time"
 )
 
 // Player audio player service
@@ -18,10 +19,8 @@ type Player struct {
 	log       *logrus.Entry
 	Messenger *Messenger
 	format    beep.Format
-	data      [][2]float64
 	tsq       *structure.TimedSampleQueue
-	samples   chan *message.StreamData
-	dataMutex sync.Mutex
+	silence   beep.Streamer
 }
 
 // Stop clean service when stopped by supervisor
@@ -37,15 +36,12 @@ func (p *Player) Serve() {
 	p.Message = make(chan proto.Message)
 	p.Messenger.Register(message.StreamDataMessage, p)
 	p.format = beep.Format{SampleRate: 44100, NumChannels: 2, Precision: 2}
-	p.data = make([][2]float64, 0)
-	p.tsq = structure.NewTimedSampleQueue()
-	p.samples = make(chan *message.StreamData)
-	p.tsq.Subscribe(p.samples)
-	p.dataMutex = sync.Mutex{}
+	p.tsq = structure.NewTimedSampleQueue(2 * int(p.format.SampleRate))
+	p.silence = beep.Silence(-1)
 
 	_ = speaker.Init(p.format.SampleRate, 512)
 	speaker.Play(beep.Seq(beep.Callback(func() {
-		p.tsq.Start()
+		//p.tsq.Start()
 	}), p, beep.Callback(func() {
 		p.log.Warn("Speaker ended stream. This should not have happened!")
 	})))
@@ -55,11 +51,11 @@ func (p *Player) Serve() {
 		case msg := <-p.Message:
 			switch m := msg.(type) {
 			case *message.StreamData:
-				popAt, _ := ptypes.Timestamp(m.NextAt)
-				p.tsq.Push(m, popAt)
+				for index, sample := range m.SamplesLeft {
+					samples := [2]float64{sample, m.SamplesRight[index]}
+					p.tsq.Add(samples, m.NextAt+int64(p.format.SampleRate.D(index)*time.Nanosecond))
+				}
 			}
-		case sample := <-p.samples:
-			go p.handleStreamData(sample)
 		}
 	}
 }
@@ -69,46 +65,32 @@ func (p *Player) GetChan() chan proto.Message {
 	return p.Message
 }
 
-func (p *Player) handleStreamData(m *message.StreamData) {
-	bufferLength := len(m.SamplesRight)
-	if bufferLength > len(m.SamplesLeft) {
-		bufferLength = len(m.SamplesLeft)
-	}
-
-	samples := make([][2]float64, bufferLength)
-
-	for i := 0; i < bufferLength; i++ {
-		samples[i] = [2]float64{m.SamplesLeft[i], m.SamplesRight[i]}
-	}
-
-	keepSamplesNb := len(p.data) - len(samples)
-	if keepSamplesNb < 0 {
-		keepSamplesNb = 0
-	}
-
-	p.dataMutex.Lock()
-	defer p.dataMutex.Unlock()
-	p.data = append(p.data[keepSamplesNb:], samples...)
-}
-
 // Stream stream audio samples from received data
 func (p *Player) Stream(samples [][2]float64) (n int, ok bool) {
-	realLength := len(samples)
-	if realLength > len(p.data) {
-		//fmt.Print("!")
-		realLength = len(p.data)
+	neededLength := len(samples)
+	silenceCount := 0
+	now := time.Now().UnixNano()
+
+	_, t := p.tsq.Peek()
+
+	for now-t > int64(10*time.Millisecond) {
+		// We are late, dropping samples
+		p.log.Debug(fmt.Sprintf("We are late by %v", time.Duration(now-t)))
+		p.tsq.Remove()
+		now = time.Now().UnixNano()
+		_, t = p.tsq.Peek()
 	}
 
-	p.dataMutex.Lock()
-	defer p.dataMutex.Unlock()
-	fetchedSamples := p.data[:realLength]
-
-	for i := 0; i < len(fetchedSamples); i++ {
-		samples[i][0] = fetchedSamples[i][0]
-		samples[i][1] = fetchedSamples[i][1]
+	if t-now > int64(10*time.Millisecond) {
+		// We are before the time of the next sample, padding with silence
+		p.log.Debug(fmt.Sprintf("Next packet is scheduled in %v", time.Duration(t-now)))
+		silenceCount = int(math.Min(float64(p.format.SampleRate.N(time.Duration(t-now))), float64(len(samples))))
+		p.silence.Stream(samples[:silenceCount])
 	}
 
-	p.data = p.data[realLength:]
+	for i := silenceCount; i < neededLength; i++ {
+		samples[i], _ = p.tsq.Remove()
+	}
 
 	return len(samples), len(samples) > 0
 }

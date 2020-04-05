@@ -1,99 +1,101 @@
 package structure
 
-import (
-	"github.com/golang/protobuf/ptypes"
-	"github.com/tuarrep/sounddrop/message"
-	"time"
-)
+import "sync"
 
-type queueable struct {
-	popAt  time.Time
-	sample *message.StreamData
-}
-
-// TimedSampleQueue buffers queueables and emits them at exact playing time
 type TimedSampleQueue struct {
-	queueables      []*queueable
-	subscribers     map[int]chan *message.StreamData
-	subscriberCount int
-	started         bool
+	buffer []timedSample
+	head   int
+	tail   int
+
+	cond      *sync.Cond
+	headMutex sync.RWMutex
+	tailMutex sync.RWMutex
 }
 
-// Push adds a sample to queue
-func (tsq *TimedSampleQueue) Push(sample *message.StreamData, popAt time.Time) int {
-	tsq.queueables = append(tsq.queueables, &queueable{sample: sample, popAt: popAt})
+func (q *TimedSampleQueue) Add(sample [2]float64, time int64) {
+	q.headMutex.Lock()
+	defer q.headMutex.Unlock()
 
-	return len(tsq.queueables)
+	q.waitNotFull()
+
+	q.buffer[q.head%len(q.buffer)] = timedSample{sample: sample, time: time}
+	q.head = q.inc(q.head)
+
+	q.cond.Broadcast()
 }
 
-// Subscribe adds subscriber to send it queueables
-func (tsq *TimedSampleQueue) Subscribe(subscriber chan *message.StreamData) int {
-	tsq.subscribers[tsq.subscriberCount] = subscriber
+func (q *TimedSampleQueue) Remove() (sample [2]float64, time int64) {
+	q.tailMutex.Lock()
+	defer q.tailMutex.Unlock()
 
-	sid := tsq.subscriberCount
-	tsq.subscriberCount++
+	q.waitNotEmpty()
 
-	return sid
+	v := q.buffer[q.tail%len(q.buffer)]
+	q.tail = q.inc(q.tail)
+
+	q.cond.Broadcast()
+	return v.sample, v.time
 }
 
-// Unsubscribe unregisters a listener
-func (tsq *TimedSampleQueue) Unsubscribe(sid int) {
-	delete(tsq.subscribers, sid)
+func (q *TimedSampleQueue) Peek() (sample [2]float64, time int64) {
+	q.tailMutex.RLock()
+	defer q.tailMutex.RUnlock()
+
+	q.waitNotEmpty()
+
+	v := q.buffer[q.tail%len(q.buffer)]
+	return v.sample, v.time
 }
 
-// Start emitting queueables
-func (tsq *TimedSampleQueue) Start() {
-	if tsq.started {
-		return
+func (q *TimedSampleQueue) Len() int {
+	q.tailMutex.RLock()
+	defer q.tailMutex.RUnlock()
+	q.headMutex.RLock()
+	defer q.headMutex.RUnlock()
+	if q.tail <= q.head {
+		return q.head - q.tail
 	}
-
-	tsq.started = true
-	go tsq.loop()
+	return q.head - q.tail + 2*len(q.buffer)
 }
 
-func (tsq *TimedSampleQueue) loop() {
-	for {
-		pop, next := tsq.pop(false)
-
-		if pop {
-			nextTime, _ := ptypes.Timestamp(next.NextAt)
-			if nextTime.Before(time.Now().Add(1*time.Millisecond)) && nextTime.After(time.Now().Add(-9*time.Millisecond)) {
-				for _, subscriber := range tsq.subscribers {
-					subscriber <- next
-				}
-
-				_, _ = tsq.pop(true)
-			} else if nextTime.Before(time.Now().Add(-6 * time.Millisecond)) {
-				// Too late for this one
-				_, _ = tsq.pop(true)
-				continue
-			}
-		}
-
-		if pop, streamData := tsq.pop(false); pop {
-			nextTime, _ := ptypes.Timestamp(streamData.NextAt)
-			time.Sleep(time.Until(nextTime.Add(-8 * time.Millisecond)))
-		} else {
-			time.Sleep(1 * time.Millisecond)
-		}
-	}
+func (q *TimedSampleQueue) Cap() int {
+	return len(q.buffer)
 }
 
-func (tsq *TimedSampleQueue) pop(remove bool) (bool, *message.StreamData) {
-	if len(tsq.queueables) == 0 {
-		return false, nil
-	}
-
-	queueable := tsq.queueables[0]
-
-	if remove {
-		tsq.queueables = tsq.queueables[1:]
-	}
-
-	return true, queueable.sample
+func (q *TimedSampleQueue) inc(i int) int {
+	return (i + 1) % (2 * len(q.buffer))
 }
 
-// NewTimedSampleQueue creates an new TimedSampleQueue
-func NewTimedSampleQueue() *TimedSampleQueue {
-	return &TimedSampleQueue{queueables: make([]*queueable, 0), subscribers: map[int]chan *message.StreamData{}, subscriberCount: 0, started: false}
+func (q *TimedSampleQueue) full() bool {
+	return (q.tail+len(q.buffer))%(2*len(q.buffer)) == q.head
+}
+
+func (q *TimedSampleQueue) empty() bool {
+	return q.head == q.tail
+}
+
+func (q *TimedSampleQueue) waitNotFull() {
+	q.cond.L.Lock()
+	for q.full() {
+		println("Queue is full")
+		q.cond.Wait()
+	}
+	q.cond.L.Unlock()
+}
+
+func (q *TimedSampleQueue) waitNotEmpty() {
+	q.cond.L.Lock()
+	for q.empty() {
+		q.cond.Wait()
+	}
+	q.cond.L.Unlock()
+}
+
+func NewTimedSampleQueue(size int) *TimedSampleQueue {
+	return &TimedSampleQueue{buffer: make([]timedSample, size), head: 0, tail: 0, cond: sync.NewCond(&sync.Mutex{})}
+}
+
+type timedSample struct {
+	sample [2]float64
+	time   int64
 }

@@ -46,10 +46,10 @@ func main() {
 	if sb.Config.Streamer.AutoStart {
 		streamer := &service.Streamer{Messenger: messenger}
 		supervisor.Add(streamer)
-	} else {
-		player := &service.Player{Messenger: messenger}
-		supervisor.Add(player)
-	}
+	} //else {
+	player := &service.Player{Messenger: messenger}
+	supervisor.Add(player)
+	//}
 
 	supervisor.ServeBackground()
 

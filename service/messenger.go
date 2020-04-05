@@ -41,8 +41,6 @@ func (m *Messenger) Serve() {
 				for _, listener := range listeners {
 					listener.GetChan() <- msg
 				}
-			} else {
-				m.log.Debug(fmt.Sprintf("Message of type %d received but no listeners was registered", opCode))
 			}
 		}
 	}

@@ -1,30 +1,46 @@
 package util
 
 import (
-	"crypto/tls"
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/shibukawa/configdir"
-	"github.com/syncthing/syncthing/lib/protocol"
-	"github.com/syncthing/syncthing/lib/tlsutil"
+	"os"
 )
 
 // GetMyID get device mesh Id
-func GetMyID() (protocol.DeviceID, error) {
+func GetMyID() (uuid.UUID, error) {
 	configDirs := configdir.New("sounddrop", "sounddrop")
 	config := configDirs.QueryFolders(configdir.Global)[0]
-	configPath := config.Path
+	filePath := fmt.Sprintf("%s/.uuid", config.Path)
 
-	cert, err := tls.LoadX509KeyPair(fmt.Sprintf("%s/%s", configPath, "cert.pem"), fmt.Sprintf("%s/%s", configPath, "key.pem"))
-	if err != nil {
-		err := config.CreateParentDir(fmt.Sprintf("%s/%s", configPath, "cert.pem"))
+	println(filePath)
+
+	if _, err := os.Stat(filePath); err == nil {
+		f, _ := os.Open(filePath)
+		b := make([]byte, 36)
+		_, err := f.Read(b)
 		if err != nil {
-			return protocol.DeviceID{}, err
+			return uuid.UUID{}, err
 		}
-		cert, err = tlsutil.NewCertificate(fmt.Sprintf("%s/%s", configPath, "cert.pem"), fmt.Sprintf("%s/%s", configPath, "key.pem"), "sounddrop")
+
+		return uuid.ParseBytes(b)
+	} else if os.IsNotExist(err) {
+		f, _ := os.Create(filePath)
+		UUID, err := uuid.NewRandom()
 		if err != nil {
-			return protocol.DeviceID{}, err
+			println("uuid.NewRandom failed")
+			return uuid.UUID{}, err
 		}
+		uuidString := UUID.String()
+		println(uuidString)
+		_, err = f.WriteString(uuidString)
+		if err != nil {
+			println("WriteString failed. DeviceID has not been written to disk.")
+		}
+
+		return UUID, nil
+	} else {
+		println("os.Stat failed")
+		return uuid.UUID{}, err
 	}
-
-	return protocol.NewDeviceID(cert.Certificate[0]), nil
 }

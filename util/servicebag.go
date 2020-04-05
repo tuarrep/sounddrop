@@ -1,12 +1,12 @@
 package util
 
 import (
-	"github.com/syncthing/syncthing/lib/protocol"
+	"github.com/google/uuid"
 )
 
 // ServiceBag various global object injected to services
 type ServiceBag struct {
-	DeviceID protocol.DeviceID
+	DeviceID uuid.UUID
 	Config   *Config
 }
 
