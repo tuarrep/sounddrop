@@ -24,8 +24,6 @@ func (m *Messenger) Stop() {
 
 // Serve main service code
 func (m *Messenger) Serve() {
-	m.listeners = make(map[byte][]message.Receiver)
-
 	m.log = util.GetContextLogger("service/messenger.go", "Services/Messenger")
 	m.log.Info("Messenger starting...")
 
@@ -49,6 +47,9 @@ func (m *Messenger) Serve() {
 // Register add message listener to listener map for one opCode
 func (m *Messenger) Register(opCode byte, listener message.Receiver) {
 	m.listenersMutex.Lock()
+	if m.listeners == nil {
+		m.listeners = make(map[byte][]message.Receiver)
+	}
 	m.listeners[opCode] = append(m.listeners[opCode], listener)
 	m.listenersMutex.Unlock()
 }
