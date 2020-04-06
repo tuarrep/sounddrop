@@ -28,17 +28,17 @@ jobs:
       os: osx
       stage: build
       before_install:
-      - HOMEBREW_NO_AUTO_UPDATE=1 brew install awscli
+      - HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_CLEANUP=1 brew install awscli
       - mkdir -p ~/$TRAVIS_BUILD_NUMBER
       - aws s3 sync s3://$AWS_BUCKET/$TRAVIS_BUILD_NUMBER ~/$TRAVIS_BUILD_NUMBER
       - go get github.com/mitchellh/gox
-      - go get -t -v ./...
       script:
         - CGO_ENABLED=1 gox -os="darwin" -arch="amd64" -output="sounddrop.{{.OS}}.{{.Arch}}" -ldflags "-X main.rev=`git rev-parse --short HEAD`" -verbose ./...
       after_success:
         - cp sounddrop.darwin.amd64 ~/$TRAVIS_BUILD_NUMBER
         - aws s3 sync ~/$TRAVIS_BUILD_NUMBER s3://$AWS_BUCKET/$TRAVIS_BUILD_NUMBER
-    - os: linux
+    - go: 1.x
+      os: linux
       stage: build
       before_install:
         - pyenv global 3.7.1
@@ -49,7 +49,6 @@ jobs:
         - go get github.com/konsorten/go-windows-terminal-sequences # For windows build
         - go get github.com/mitchellh/gox
         - sudo apt update && sudo apt install -y libasound2-dev
-        - go get -t -v ./...
       script:
         - CGO_ENABLED=1 gox -os="linux windows" -arch="amd64" -output="sounddrop.{{.OS}}.{{.Arch}}" -ldflags "-X main.rev=`git rev-parse --short HEAD`" -verbose ./...
       after_success:
@@ -78,9 +77,6 @@ jobs:
           tags: true
   allow_failures:
     - go: tip
-
-before_install:
-  - go get -t -v ./...
 
 script:
   - diff -u <(echo -n) <(gofmt -d .)
