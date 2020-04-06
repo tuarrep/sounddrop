@@ -33,7 +33,7 @@ jobs:
       - pip install -U pip
       - pip install awscli
       - mkdir -p ~/$TRAVIS_BUILD_NUMBER
-      - aws s3 sync s3://$AWS_BUCKET/$TRAVIS_BUILD_NUMBER ~/$TRAVIS_BUILD_NUMBER --quiet
+      - aws s3 sync s3://$AWS_BUCKET/$TRAVIS_BUILD_NUMBER ~/$TRAVIS_BUILD_NUMBER --only-show-errors
       script:
         - CGO_ENABLED=1 gox -os="darwin" -arch="amd64" -output="~/$TRAVIS_BUILD_NUMBER/sounddrop.{{.OS}}.{{.Arch}}" -ldflags "-X main.rev=`git rev-parse --short HEAD`" -verbose ./...
       after_success:
@@ -46,7 +46,7 @@ jobs:
         - pip install -U pip
         - pip install awscli
         - mkdir -p ~/$TRAVIS_BUILD_NUMBER
-        - aws s3 sync s3://$AWS_BUCKET/$TRAVIS_BUILD_NUMBER ~/$TRAVIS_BUILD_NUMBER --quiet
+        - aws s3 sync s3://$AWS_BUCKET/$TRAVIS_BUILD_NUMBER ~/$TRAVIS_BUILD_NUMBER --only-show-errors
       script:
         - CGO_ENABLED=1 gox -os="linux windows" -arch="amd64" -output="~/$TRAVIS_BUILD_NUMBER/sounddrop.{{.OS}}.{{.Arch}}" -ldflags "-X main.rev=`git rev-parse --short HEAD`" -verbose ./...
       after_success:
