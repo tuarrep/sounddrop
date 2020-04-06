@@ -49,6 +49,7 @@ jobs:
         - mkdir -p ~/$TRAVIS_BUILD_NUMBER
         - aws s3 sync s3://$AWS_BUCKET/$TRAVIS_BUILD_NUMBER ~/$TRAVIS_BUILD_NUMBER --only-show-errors
         - go get github.com/konsorten/go-windows-terminal-sequences # For windows build
+        - go get github.com/mitchellh/gox
         - sudo apt update && sudo apt install -y libasound2-dev
         - go get -t -v ./...
       script:
