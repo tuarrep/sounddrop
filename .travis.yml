@@ -29,9 +29,7 @@ jobs:
       os: osx
       stage: build
       before_install:
-      - pyenv global 3.7.1
-      - pip install -U pip
-      - pip install awscli
+      - brew install awscli
       - mkdir -p ~/$TRAVIS_BUILD_NUMBER
       - aws s3 sync s3://$AWS_BUCKET/$TRAVIS_BUILD_NUMBER ~/$TRAVIS_BUILD_NUMBER --only-show-errors
       script:
@@ -51,7 +49,7 @@ jobs:
       script:
         - CGO_ENABLED=1 gox -os="linux windows" -arch="amd64" -output="sounddrop.{{.OS}}.{{.Arch}}" -ldflags "-X main.rev=`git rev-parse --short HEAD`" -verbose ./...
       after_success:
-        - cp *.amd64 ~/$TRAVIS_BUILD_NUMBER
+        - cp ./{sounddrop.windows.amd64.exe, sounddrop.linux.amd64} ~/$TRAVIS_BUILD_NUMBER
         - aws s3 sync ~/$TRAVIS_BUILD_NUMBER s3://$AWS_BUCKET/$TRAVIS_BUILD_NUMBER --only-show-errors
 
     - stage: deploy
