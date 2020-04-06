@@ -30,14 +30,14 @@ jobs:
       before_install:
       - HOMEBREW_NO_AUTO_UPDATE=1 brew install awscli
       - mkdir -p ~/$TRAVIS_BUILD_NUMBER
-      - aws s3 sync s3://$AWS_BUCKET/$TRAVIS_BUILD_NUMBER ~/$TRAVIS_BUILD_NUMBER --only-show-errors
+      - aws s3 sync s3://$AWS_BUCKET/$TRAVIS_BUILD_NUMBER ~/$TRAVIS_BUILD_NUMBER
       - go get github.com/mitchellh/gox
       - go get -t -v ./...
       script:
         - CGO_ENABLED=1 gox -os="darwin" -arch="amd64" -output="sounddrop.{{.OS}}.{{.Arch}}" -ldflags "-X main.rev=`git rev-parse --short HEAD`" -verbose ./...
       after_success:
         - cp sounddrop.darwin.amd64 ~/$TRAVIS_BUILD_NUMBER
-        - aws s3 sync ~/$TRAVIS_BUILD_NUMBER s3://$AWS_BUCKET/$TRAVIS_BUILD_NUMBER --only-show-errors
+        - aws s3 sync ~/$TRAVIS_BUILD_NUMBER s3://$AWS_BUCKET/$TRAVIS_BUILD_NUMBER
     - os: linux
       stage: build
       before_install:
@@ -45,7 +45,7 @@ jobs:
         - pip install -U pip
         - pip install awscli
         - mkdir -p ~/$TRAVIS_BUILD_NUMBER
-        - aws s3 sync s3://$AWS_BUCKET/$TRAVIS_BUILD_NUMBER ~/$TRAVIS_BUILD_NUMBER --only-show-errors
+        - aws s3 sync s3://$AWS_BUCKET/$TRAVIS_BUILD_NUMBER ~/$TRAVIS_BUILD_NUMBER
         - go get github.com/konsorten/go-windows-terminal-sequences # For windows build
         - go get github.com/mitchellh/gox
         - sudo apt update && sudo apt install -y libasound2-dev
@@ -55,7 +55,7 @@ jobs:
       after_success:
         - cp sounddrop.linux.amd64 ~/$TRAVIS_BUILD_NUMBER
         - cp sounddrop.windows.amd64.exe ~/$TRAVIS_BUILD_NUMBER
-        - aws s3 sync ~/$TRAVIS_BUILD_NUMBER s3://$AWS_BUCKET/$TRAVIS_BUILD_NUMBER --only-show-errors
+        - aws s3 sync ~/$TRAVIS_BUILD_NUMBER s3://$AWS_BUCKET/$TRAVIS_BUILD_NUMBER
 
     - stage: deploy
       before_install:
@@ -63,7 +63,7 @@ jobs:
         - pip install -U pip
         - pip install awscli
         - mkdir -p ~/$TRAVIS_BUILD_NUMBER
-        - aws s3 sync s3://$AWS_BUCKET/$TRAVIS_BUILD_NUMBER ~/$TRAVIS_BUILD_NUMBER --only-show-errors
+        - aws s3 sync s3://$AWS_BUCKET/$TRAVIS_BUILD_NUMBER ~/$TRAVIS_BUILD_NUMBER
       install: skip
       script: skip
       deploy:
@@ -72,9 +72,7 @@ jobs:
         draft: true
         token: $GITHUB_TOKEN
         file:
-          - ~/$TRAVIS_BUILD_NUMBER/sounddrop.windows.amd64.exe
-          - ~/$TRAVIS_BUILD_NUMBER/sounddrop.linux.amd64
-          - ~/$TRAVIS_BUILD_NUMBER/sounddrop.darwin.amd64
+          - ~/$TRAVIS_BUILD_NUMBER/*
         on:
           repo: tuarrep/sounddrop
           tags: true
