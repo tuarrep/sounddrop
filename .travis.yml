@@ -61,8 +61,8 @@ jobs:
         - pyenv global 3.7.1
         - pip install -U pip
         - pip install awscli
-        - mkdir -p ~/$TRAVIS_BUILD_NUMBER
-        - aws s3 sync s3://$AWS_BUCKET/$TRAVIS_BUILD_NUMBER ~/$TRAVIS_BUILD_NUMBER
+        - mkdir build
+        - aws s3 sync s3://$AWS_BUCKET/$TRAVIS_BUILD_NUMBER ./build
       install: skip
       script: skip
       deploy:
@@ -71,7 +71,7 @@ jobs:
         draft: true
         token: $GITHUB_TOKEN
         file:
-          - ~/$TRAVIS_BUILD_NUMBER/*
+          - ./build/*
         on:
           repo: tuarrep/sounddrop
           tags: true
