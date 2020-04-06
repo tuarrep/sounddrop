@@ -39,6 +39,7 @@ deploy:
   file:
     - sounddrop.windows.amd64.exe
     - sounddrop.linux.amd64
+    - sounddrop.darwin.amd64
   on:
     repo: tuarrep/sounddrop
     tags: true
