@@ -1,13 +1,14 @@
 language: go
+go: 1.x
+os: linux
+dist: xenial
+
 stages:
   - test
   - build
   - deploy
 jobs:
   include:
-    - go: 1.x
-      os: linux
-      stage: test
     - go: tip
       os: linux
       stage: test
@@ -31,17 +32,31 @@ jobs:
       stage: test
 
     - go: 1.x
-      env: LATEST=true
       os: osx
       stage: build
+      before_install:
+      - pyenv global 3.7.1
+      - pip install -U pip
+      - pip install awscli
+      - mkdir -p ~/$TRAVIS_BUILD_NUMBER
+      - aws s3 sync s3://$AWS_BUCKET/$TRAVIS_BUILD_NUMBER ~/$TRAVIS_BUILD_NUMBER --quiet
       script:
         - CGO_ENABLED=1 gox -os="darwin" -arch="amd64" -output="~/$TRAVIS_BUILD_NUMBER/sounddrop.{{.OS}}.{{.Arch}}" -ldflags "-X main.rev=`git rev-parse --short HEAD`" -verbose ./...
+      after_success:
+        - aws s3 sync ~/$TRAVIS_BUILD_NUMBER s3://$AWS_BUCKET/$TRAVIS_BUILD_NUMBER
     - go: 1.x
-      env: LATEST=true
       os: linux
       stage: build
+      before_install:
+        - pyenv global 3.7.1
+        - pip install -U pip
+        - pip install awscli
+        - mkdir -p ~/$TRAVIS_BUILD_NUMBER
+        - aws s3 sync s3://$AWS_BUCKET/$TRAVIS_BUILD_NUMBER ~/$TRAVIS_BUILD_NUMBER --quiet
       script:
         - CGO_ENABLED=1 gox -os="linux windows" -arch="amd64" -output="~/$TRAVIS_BUILD_NUMBER/sounddrop.{{.OS}}.{{.Arch}}" -ldflags "-X main.rev=`git rev-parse --short HEAD`" -verbose ./...
+      after_success:
+        - aws s3 sync ~/$TRAVIS_BUILD_NUMBER s3://$AWS_BUCKET/$TRAVIS_BUILD_NUMBER
 
     - stage: deploy
       deploy:
@@ -59,12 +74,7 @@ jobs:
   allow_failures:
     - go: tip
 
-before_install:
-  - pyenv global 3.7.1
-  - pip install -U pip
-  - pip install awscli
-  - mkdir -p ~/$TRAVIS_BUILD_NUMBER
-  - aws s3 sync s3://$AWS_BUCKET/$TRAVIS_BUILD_NUMBER ~/$TRAVIS_BUILD_NUMBER -quiet
+install:
   - go get github.com/mitchellh/gox
   - go get github.com/konsorten/go-windows-terminal-sequences # For windows build
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt update && sudo apt install -y libasound2-dev ; fi
@@ -74,6 +84,3 @@ script:
   - diff -u <(echo -n) <(gofmt -d .)
   - go vet $(go list ./... | grep -v /vendor/)
   - go test -v -race ./...
-
-after_success:
-  - aws s3 sync ~/$TRAVIS_BUILD_NUMBER s3://$AWS_BUCKET/$TRAVIS_BUILD_NUMBER
