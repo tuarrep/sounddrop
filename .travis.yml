@@ -35,9 +35,10 @@ jobs:
       - mkdir -p ~/$TRAVIS_BUILD_NUMBER
       - aws s3 sync s3://$AWS_BUCKET/$TRAVIS_BUILD_NUMBER ~/$TRAVIS_BUILD_NUMBER --only-show-errors
       script:
-        - CGO_ENABLED=1 gox -os="darwin" -arch="amd64" -output="~/$TRAVIS_BUILD_NUMBER/sounddrop.{{.OS}}.{{.Arch}}" -ldflags "-X main.rev=`git rev-parse --short HEAD`" -verbose ./...
+        - CGO_ENABLED=1 gox -os="darwin" -arch="amd64" -output="sounddrop.{{.OS}}.{{.Arch}}" -ldflags "-X main.rev=`git rev-parse --short HEAD`" -verbose ./...
       after_success:
-        - aws s3 sync ~/$TRAVIS_BUILD_NUMBER s3://$AWS_BUCKET/$TRAVIS_BUILD_NUMBER
+        - cp *.amd64 ~/$TRAVIS_BUILD_NUMBER
+        - aws s3 sync ~/$TRAVIS_BUILD_NUMBER s3://$AWS_BUCKET/$TRAVIS_BUILD_NUMBER --only-show-errors
     - go: 1.x
       os: linux
       stage: build
@@ -48,9 +49,10 @@ jobs:
         - mkdir -p ~/$TRAVIS_BUILD_NUMBER
         - aws s3 sync s3://$AWS_BUCKET/$TRAVIS_BUILD_NUMBER ~/$TRAVIS_BUILD_NUMBER --only-show-errors
       script:
-        - CGO_ENABLED=1 gox -os="linux windows" -arch="amd64" -output="~/$TRAVIS_BUILD_NUMBER/sounddrop.{{.OS}}.{{.Arch}}" -ldflags "-X main.rev=`git rev-parse --short HEAD`" -verbose ./...
+        - CGO_ENABLED=1 gox -os="linux windows" -arch="amd64" -output="sounddrop.{{.OS}}.{{.Arch}}" -ldflags "-X main.rev=`git rev-parse --short HEAD`" -verbose ./...
       after_success:
-        - aws s3 sync ~/$TRAVIS_BUILD_NUMBER s3://$AWS_BUCKET/$TRAVIS_BUILD_NUMBER
+        - cp *.amd64 ~/$TRAVIS_BUILD_NUMBER
+        - aws s3 sync ~/$TRAVIS_BUILD_NUMBER s3://$AWS_BUCKET/$TRAVIS_BUILD_NUMBER --only-show-errors
 
     - stage: deploy
       deploy:
