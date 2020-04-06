@@ -6,6 +6,10 @@ jobs:
   include:
     - go: 1.x
       env: LATEST=true
+      os: linux
+    - go: 1.x
+      env: LATEST=true
+      os: osx
     - go: 1.12.x
       os: linux
     - go: 1.13.x
