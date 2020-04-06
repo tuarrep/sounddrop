@@ -1,19 +1,23 @@
 language: go
-os: linux
-dist: xenial
+os:
+  - linux
+  - osx
 jobs:
   include:
     - go: 1.x
       env: LATEST=true
     - go: 1.12.x
+      os: linux
     - go: 1.13.x
+      os: linux
     - go: tip
+      os: linux
   allow_failures:
     - go: tip
 before_install:
   - go get github.com/mitchellh/gox
   - go get github.com/konsorten/go-windows-terminal-sequences # For windows build
-  - sudo apt update && sudo apt install -y libasound2-dev
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt update && sudo apt install -y libasound2-dev ; fi
 install:
   -
 script:
@@ -21,7 +25,8 @@ script:
   - diff -u <(echo -n) <(gofmt -d .)
   - go vet $(go list ./... | grep -v /vendor/)
   - go test -v -race ./...
-  - if [ "${LATEST}" = "true" ]; then CGO_ENABLED=1 gox -os="linux windows darwin" -arch="amd64" -output="sounddrop.{{.OS}}.{{.Arch}}" -ldflags "-X main.rev=`git rev-parse --short HEAD`" -verbose ./...; fi
+  - if [ "${LATEST}" = "true" ] && [ "$TRAVIS_OS_NAME" = "linux" ]; then CGO_ENABLED=1 gox -os="linux windows" -arch="amd64" -output="sounddrop.{{.OS}}.{{.Arch}}" -ldflags "-X main.rev=`git rev-parse --short HEAD`" -verbose ./...; fi
+  - if [ "${LATEST}" = "true" ] && [ "$TRAVIS_OS_NAME" = "osx" ]; then CGO_ENABLED=1 gox -os="darwin" -arch="amd64" -output="sounddrop.{{.OS}}.{{.Arch}}" -ldflags "-X main.rev=`git rev-parse --short HEAD`" -verbose ./...; fi
 deploy:
   provider: releases
   edge: true
