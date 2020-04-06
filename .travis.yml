@@ -1,5 +1,4 @@
 language: go
-go: 1.x
 os: linux
 dist: xenial
 
@@ -39,8 +38,7 @@ jobs:
       after_success:
         - cp sounddrop.darwin.amd64 ~/$TRAVIS_BUILD_NUMBER
         - aws s3 sync ~/$TRAVIS_BUILD_NUMBER s3://$AWS_BUCKET/$TRAVIS_BUILD_NUMBER --only-show-errors
-    - go: 1.x
-      os: linux
+    - os: linux
       stage: build
       before_install:
         - pyenv global 3.7.1
@@ -66,6 +64,7 @@ jobs:
         - pip install awscli
         - mkdir -p ~/$TRAVIS_BUILD_NUMBER
         - aws s3 sync s3://$AWS_BUCKET/$TRAVIS_BUILD_NUMBER ~/$TRAVIS_BUILD_NUMBER --only-show-errors
+      install: skip
       script: skip
       deploy:
         provider: releases
