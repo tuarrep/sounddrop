@@ -1,6 +1,7 @@
 language: go
-sudo: false
-matrix:
+os: linux
+dist: xenial
+jobs:
   include:
     - go: 1.x
       env: LATEST=true
@@ -23,9 +24,9 @@ script:
   - if [ "${LATEST}" = "true" ]; then gox -os="linux windows" -arch="amd64" -output="sounddrop.{{.OS}}.{{.Arch}}" -ldflags "-X main.rev=`git rev-parse --short HEAD`" -verbose ./...; fi
 deploy:
   provider: releases
-  skip_cleanup: true
-  api_key:
-    secure: rjdZMydbse7SSHN4lfS/3irzfDQCDI03VSDmelyrvjdVsj2mNQDdyQuVf1xrAgYmH79oZaJcXS2dBnB+vbIz3ca0RHKHIOzEazzWjUn95kugtGkMCiSHH0EIAXuAWSLUwZe/Qo5iHEfL77JfWERMfPN74ZKheHH49B+XDBMde9IhJL4DtcweJRZwsMMrhA8csizmhX1hDXfqMFPLkXCG0bC/jItbx04dJIlMQMz4ESwpD8OBgvQrkGz6FRqfmS3VpMFS/J4IeCzNSQla0fwS2dVu9ZMRglc4nicU7f21NYloRQjhyJIKmHgOo6ycNBAwg7TuiXH7wuFnFR+m89VgxxdGemoQ2xMy4M9OsFMrxqJyIx8YDBYWL4PDIxiJpYKuOamPXNhnvAMALv++aLSMkHNchj7shuz1hxwRbWkxFe+V5StsxRK2tQhu/k74r8JRkw98DuoNNec+CVsFlXYPT0r8QG3Ms98Y0URonyhwIuhQ22hYN0B99P+2HWmLdlQHBPXcqUkV3yhljbbpgufTFEjFfnr2cGXtOZc/Ey5UsNMA5kZTx+05rQLswCwemwkoasvfwJXDlgb0Oqi9s8j9oaQ75Y1RWpJpA8ydrxd4kK7Dx+ZmfeESyqrgIZD4a8QQdjqJatbWxm7KvV2SWQnMxcqUXll6SYwEFGIlvWL7dl8=
+  edge: true
+  draft: true
+  token: $GITHUB_TOKEN
   file:
     - sounddrop.windows.amd64.exe
     - sounddrop.linux.amd64
