@@ -77,7 +77,8 @@ jobs:
           tags: true
   allow_failures:
     - go: tip
-
+before_install:
+  - sudo apt update && sudo apt install -y libasound2-dev
 script:
   - diff -u <(echo -n) <(gofmt -d .)
   - go vet $(go list ./... | grep -v /vendor/)
