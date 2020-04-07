@@ -8,10 +8,11 @@ It's designed to run on multiple devices and allows them to discover themselves 
 User can after create group of devices to share sound between them.
 
 ## Basic usage
-> Binaries are availables on [releases page](https://github.com/tuarrep/sounddrop/releases/)
-## Warnings
-- **Versions of go prior to 1.8 aren't supported**
-- **Only wave and mp3 files sampled at 44100Hz are supported**
+Binaries are available on [releases page](https://github.com/tuarrep/sounddrop/releases/).
+
+__Warnings__
+- Versions of go prior to 1.11 aren't supported
+- Only wave and mp3 files sampled at 44100Hz are supported
 
 ### Usage
 ```bash

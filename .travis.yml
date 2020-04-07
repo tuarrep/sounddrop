@@ -1,36 +1,84 @@
 language: go
 os: linux
 dist: xenial
+
+stages:
+  - test
+  - build
+  - deploy
 jobs:
   include:
-    - go: 1.x
-      env: LATEST=true
-    - go: 1.12.x
-    - go: 1.13.x
     - go: tip
+      os: linux
+      stage: test
+    - go: 1.11.x
+      os: linux
+      stage: test
+    - go: 1.12.x
+      os: linux
+      stage: test
+    - go: 1.13.x
+      os: linux
+      stage: test
+    - go: 1.14.x
+      os: linux
+      stage: test
+
+    - go: 1.x
+      os: osx
+      stage: build
+      before_install:
+      - HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_CLEANUP=1 brew install awscli
+      - mkdir -p ~/$TRAVIS_BUILD_NUMBER
+      - aws s3 sync s3://$AWS_BUCKET/$TRAVIS_BUILD_NUMBER ~/$TRAVIS_BUILD_NUMBER
+      - go get github.com/mitchellh/gox
+      script:
+        - CGO_ENABLED=1 gox -os="darwin" -arch="amd64" -output="sounddrop.{{.OS}}.{{.Arch}}" -ldflags "-X main.rev=`git rev-parse --short HEAD`" -verbose ./...
+      after_success:
+        - cp sounddrop.darwin.amd64 ~/$TRAVIS_BUILD_NUMBER
+        - aws s3 sync ~/$TRAVIS_BUILD_NUMBER s3://$AWS_BUCKET/$TRAVIS_BUILD_NUMBER
+    - go: 1.x
+      os: linux
+      stage: build
+      before_install:
+        - pyenv global 3.7.1
+        - pip install -U pip
+        - pip install awscli
+        - mkdir -p ~/$TRAVIS_BUILD_NUMBER
+        - aws s3 sync s3://$AWS_BUCKET/$TRAVIS_BUILD_NUMBER ~/$TRAVIS_BUILD_NUMBER
+        - go get github.com/konsorten/go-windows-terminal-sequences # For windows build
+        - go get github.com/mitchellh/gox
+        - sudo apt update && sudo apt install -y libasound2-dev
+      script:
+        - CGO_ENABLED=1 gox -os="linux windows" -arch="amd64" -output="sounddrop.{{.OS}}.{{.Arch}}" -ldflags "-X main.rev=`git rev-parse --short HEAD`" -verbose ./...
+      after_success:
+        - cp sounddrop.linux.amd64 ~/$TRAVIS_BUILD_NUMBER
+        - cp sounddrop.windows.amd64.exe ~/$TRAVIS_BUILD_NUMBER
+        - aws s3 sync ~/$TRAVIS_BUILD_NUMBER s3://$AWS_BUCKET/$TRAVIS_BUILD_NUMBER
+
+    - stage: deploy
+      before_install:
+        - pyenv global 3.7.1
+        - pip install -U pip
+        - pip install awscli
+        - mkdir build
+        - aws s3 sync s3://$AWS_BUCKET/$TRAVIS_BUILD_NUMBER ./build
+      install: skip
+      script: skip
+      deploy:
+        provider: releases
+        edge: true
+        draft: true
+        token: $GITHUB_TOKEN
+        file:
+          - ./build/*
+        on:
+          repo: tuarrep/sounddrop
+          tags: true
   allow_failures:
     - go: tip
-before_install:
-  - go get github.com/mitchellh/gox
-  - go get github.com/konsorten/go-windows-terminal-sequences # For windows build
-  - sudo apt update && sudo apt install -y libasound2-dev
-install:
-  -
+
 script:
-  - go get -t -v ./...
   - diff -u <(echo -n) <(gofmt -d .)
   - go vet $(go list ./... | grep -v /vendor/)
   - go test -v -race ./...
-  - if [ "${LATEST}" = "true" ]; then gox -os="linux windows" -arch="amd64" -output="sounddrop.{{.OS}}.{{.Arch}}" -ldflags "-X main.rev=`git rev-parse --short HEAD`" -verbose ./...; fi
-deploy:
-  provider: releases
-  edge: true
-  draft: true
-  token: $GITHUB_TOKEN
-  file:
-    - sounddrop.windows.amd64.exe
-    - sounddrop.linux.amd64
-  on:
-    repo: tuarrep/sounddrop
-    tags: true
-    condition: $LATEST = true
