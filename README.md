@@ -1,6 +1,6 @@
 # Sounddrop : Multiroom audio system
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fmafzst%2Fsounddrop.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fmafzst%2Fsounddrop?ref=badge_shield)
-[![Treeware](https://img.shields.io/badge/dynamic/json?color=brightgreen&label=Treeware&query=%24.total&url=https%3A%2F%2Fpublic.offset.earth%2Ftuarrep%2Fsounddrop%2Ftrees)](https://treeware.earth)
+[![Treeware](https://img.shields.io/treeware/trees/tuarrpe/sounddrop?label=Treeware)](https://plant.treeware.earth/tuarrep/sounddrop)
 
 ## Overview
 
