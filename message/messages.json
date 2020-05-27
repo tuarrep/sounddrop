@@ -1,0 +1,32 @@
+{
+  "nested": {
+    "message": {
+      "nested": {
+        "WSDeviceStatus": {
+          "fields": {
+            "id": {
+              "type": "string",
+              "id": 1
+            },
+            "status": {
+              "type": "Status",
+              "id": 2
+            }
+          },
+          "nested": {
+            "Status": {
+              "values": {
+                "UNKNOWN": 0,
+                "NEW": 1,
+                "ONLINE": 2,
+                "OFFLINE": 3,
+                "DISAPPEARED": 4,
+                "EVICTED": 5
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package message;
+
+message WSDeviceStatus {
+    string id = 1;
+    enum Status {
+        UNKNOWN = 0;
+        NEW = 1;
+        ONLINE = 2;
+        OFFLINE = 3;
+        DISAPPEARED = 4;
+        EVICTED = 5;
+    }
+    Status status = 2;
+}
