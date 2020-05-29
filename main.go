@@ -18,11 +18,7 @@ func main() {
 	log := util.GetContextLogger("main.go", "main")
 
 	log.Info("Starting main process...")
-	myID, err := util.GetMyID()
-	if err != nil {
-		log.Fatal("Cannot obtain device ID. Aborting startup.", err)
-		os.Exit(-1)
-	}
+	myID := util.GetMyID()
 
 	log.Info("I'm known on mesh by: ", myID.String())
 
