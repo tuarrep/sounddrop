@@ -4,7 +4,7 @@
 
 ## Overview
 
-Sound Drop is a golang software to play music in multiple rooms at the same time.
+Sounddrop is a golang software to play music in multiple rooms at the same time.
 It's designed to run on multiple devices and allows them to discover themselves automatically on the local network.
 User can after create group of devices to share sound between them.
 
