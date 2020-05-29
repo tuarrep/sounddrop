@@ -83,7 +83,6 @@ func (q *TimedSampleQueue) empty() bool {
 func (q *TimedSampleQueue) waitNotFull() {
 	q.cond.L.Lock()
 	for q.full() {
-		println("Queue is full")
 		q.cond.Wait()
 	}
 	q.cond.L.Unlock()

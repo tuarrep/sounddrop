@@ -36,7 +36,7 @@ func (p *Player) Serve() {
 	p.Message = make(chan proto.Message)
 	p.Messenger.Register(message.StreamDataMessage, p)
 	p.format = beep.Format{SampleRate: 44100, NumChannels: 2, Precision: 2}
-	p.tsq = structure.NewTimedSampleQueue(2 * int(p.format.SampleRate))
+	p.tsq = structure.NewTimedSampleQueue(10 * int(p.format.SampleRate))
 	p.silence = beep.Silence(-1)
 
 	_ = speaker.Init(p.format.SampleRate, 512)
@@ -75,7 +75,6 @@ func (p *Player) Stream(samples [][2]float64) (n int, ok bool) {
 
 	for now-t > int64(10*time.Millisecond) {
 		// We are late, dropping samples
-		p.log.Debug(fmt.Sprintf("We are late by %v", time.Duration(now-t)))
 		p.tsq.Remove()
 		now = time.Now().UnixNano()
 		_, t = p.tsq.Peek()

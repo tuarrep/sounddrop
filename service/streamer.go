@@ -21,6 +21,7 @@ type Streamer struct {
 	log       *logrus.Entry
 	Messenger *Messenger
 	sb        *util.ServiceBag
+	stream    beep.Streamer
 }
 
 // Stop clean service when stopped by supervisor
@@ -94,8 +95,11 @@ func (s *Streamer) streamToMessage(stream beep.StreamCloser, format beep.Format)
 	buff := make([][2]float64, 512)
 	ok := true
 	n := 512
+	nextRunAt := time.Now().UnixNano() + 5*time.Second.Nanoseconds()
 
 	for ok == true {
+		now := time.Now().UnixNano()
+
 		n, ok = stream.Stream(buff)
 
 		samplesLeft := make([]float64, n)
@@ -107,13 +111,13 @@ func (s *Streamer) streamToMessage(stream beep.StreamCloser, format beep.Format)
 		}
 
 		nextRunIn := format.SampleRate.D(n)
-		nextRunAt := time.Now().UnixNano() + int64(1*time.Second)
+		nextRunAt += nextRunIn.Nanoseconds()
 
 		msg := &message.StreamData{SamplesLeft: samplesLeft, SamplesRight: samplesRight, NextAt: nextRunAt}
 		s.Messenger.Message <- msg
 		msgData, _ := message.ToBuffer(msg)
 		s.Messenger.Message <- &message.WriteRequest{DeviceName: "*", Message: msgData}
 
-		time.Sleep(nextRunIn)
+		time.Sleep(nextRunIn - time.Duration(time.Now().UnixNano()-now) - time.Millisecond)
 	}
 }
