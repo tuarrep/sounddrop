@@ -37,6 +37,9 @@ __Warnings__
 
 ```
 
+## Work in progress
+Sounddrop is currently work in progress. Major comming features and roadmap can be found in [repository projects](https://github.com/tuarrep/sounddrop/projects). Have a look there and feel free to create new issues or discuss exiting ones.
+
 ## Author
 
 Nicolas Perraut - [@tuarrep](https://github.com/tuarrep)
