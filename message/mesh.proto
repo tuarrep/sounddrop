@@ -1,11 +1,9 @@
 syntax = "proto3";
 
 package message;
+option go_package = "github.com/tuarrep/sounddrop/message";
 
-message DeviceAllowed {
+message DeviceStatus {
     string id = 1;
-}
-
-message DeviceDisallowed {
-    string id = 1;
+    bool allowed = 2;
 }

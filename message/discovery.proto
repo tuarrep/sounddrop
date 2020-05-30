@@ -1,6 +1,7 @@
 syntax = "proto3";
 
 package message;
+option go_package = "github.com/tuarrep/sounddrop/message";
 
 message Announce {
     uint32 service_number = 1;

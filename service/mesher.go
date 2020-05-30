@@ -38,7 +38,7 @@ func (msh *Mesher) Serve() {
 	msh.message = make(chan proto.Message)
 	msh.devices = make(map[string]*Device)
 
-	msh.Messenger.RegisterSome([]byte{message.PeerOnlineMessage, message.PeerOfflineMessage, message.DeviceAllowedMessage, message.DeviceDisallowedMessage}, msh)
+	msh.Messenger.RegisterSome([]byte{message.PeerOnlineMessage, message.PeerOfflineMessage, message.DeviceStatusMessage}, msh)
 
 	msh.devices[msh.sb.DeviceID.String()] = &Device{id: msh.sb.DeviceID.String(), online: true, allowed: msh.sb.Config.Mesh.AutoAccept}
 
@@ -50,26 +50,16 @@ func (msh *Mesher) Serve() {
 				msh.handlePeerOnline(m)
 			case *message.PeerOffline:
 				msh.handlePeerOffline(m)
-			case *message.DeviceAllowed:
-				msh.handleDeviceAlowed(m)
-			case *message.DeviceDisallowed:
-				msh.handleDeviceDisallowed(m)
+			case *message.DeviceStatus:
+				msh.handleDeviceStatus(m)
 			}
 		}
 	}
 }
 
-func (msh *Mesher) handleDeviceDisallowed(m *message.DeviceDisallowed) {
-	if device, found := msh.devices[m.Id]; found && device.allowed == true {
-		device.allowed = false
-		msh.devices[m.Id] = device
-		msh.log.Warn("Evicted device ", m.Id)
-	}
-}
-
-func (msh *Mesher) handleDeviceAlowed(m *message.DeviceAllowed) {
+func (msh *Mesher) handleDeviceStatus(m *message.DeviceStatus) {
 	if device, found := msh.devices[m.Id]; found && device.allowed == false {
-		device.allowed = true
+		device.allowed = m.Allowed
 		msh.devices[m.Id] = device
 		msh.log.Warn("Accepted device ", m.Id)
 	}
@@ -107,14 +97,7 @@ func (msh *Mesher) GetChan() chan proto.Message {
 
 func (msh *Mesher) sendMeshState() {
 	for _, device := range msh.devices {
-		var notification proto.Message
-
-		if device.allowed {
-			notification = &message.DeviceAllowed{Id: device.id}
-		} else {
-			notification = &message.DeviceDisallowed{Id: device.id}
-		}
-
+		notification := &message.DeviceStatus{Id: device.id, Allowed: device.allowed}
 		notificationData, _ := message.ToBuffer(notification)
 		msh.Messenger.Message <- &message.WriteRequest{DeviceName: "*", Message: notificationData}
 	}

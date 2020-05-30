@@ -16,13 +16,12 @@ const ServiceNumber uint32 = 0xECC377BC
 
 // Messages opCodes
 const (
-	AnnounceMessage         = 0x00
-	DeviceAllowedMessage    = 0x10
-	DeviceDisallowedMessage = 0x11
-	StreamDataMessage       = 0x20
-	PeerOnlineMessage       = 0xF0
-	PeerOfflineMessage      = 0xF1
-	WriteRequestMessage     = 0xF2
+	AnnounceMessage     = 0x00
+	DeviceStatusMessage = 0x10
+	StreamDataMessage   = 0x20
+	PeerOnlineMessage   = 0xF0
+	PeerOfflineMessage  = 0xF1
+	WriteRequestMessage = 0xF2
 )
 
 // FromBuffer get message instance from raw bytes buffer
@@ -37,10 +36,8 @@ func FromBuffer(buffer []byte) (proto.Message, error) {
 	switch opCode {
 	case AnnounceMessage:
 		message = &Announce{}
-	case DeviceAllowedMessage:
-		message = &DeviceAllowed{}
-	case DeviceDisallowedMessage:
-		message = &DeviceDisallowed{}
+	case DeviceStatusMessage:
+		message = &DeviceStatus{}
 	case StreamDataMessage:
 		message = &StreamData{}
 	default:
@@ -73,10 +70,8 @@ func FindOpCode(message proto.Message) (byte, error) {
 	switch message.(type) {
 	case *Announce:
 		opcode = AnnounceMessage
-	case *DeviceAllowed:
-		opcode = DeviceAllowedMessage
-	case *DeviceDisallowed:
-		opcode = DeviceDisallowedMessage
+	case *DeviceStatus:
+		opcode = DeviceStatusMessage
 	case *StreamData:
 		opcode = StreamDataMessage
 	case *PeerOnline:
