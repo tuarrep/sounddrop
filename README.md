@@ -9,7 +9,7 @@ It's designed to run on multiple devices and allows them to discover themselves 
 User can after create group of devices to share sound between them.
 
 ## Basic usage
-Binaries are available on [releases page](https://github.com/tuarrep/sounddrop/releases/). Go 1.11+ is required.
+Binaries are available on [releases page](https://github.com/tuarrep/sounddrop/releases/). Go 1.13+ is required.
 
 ### Usage
 ```bash
