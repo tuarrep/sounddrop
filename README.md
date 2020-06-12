@@ -9,11 +9,7 @@ It's designed to run on multiple devices and allows them to discover themselves 
 User can after create group of devices to share sound between them.
 
 ## Basic usage
-Binaries are available on [releases page](https://github.com/tuarrep/sounddrop/releases/).
-
-__Warnings__
-- Versions of go prior to 1.11 aren't supported
-- Only wave and mp3 files sampled at 44100Hz are supported
+Binaries are available on [releases page](https://github.com/tuarrep/sounddrop/releases/). Go 1.13+ is required.
 
 ### Usage
 ```bash
@@ -34,7 +30,10 @@ __Warnings__
         Directory containing audio files to play (default ".")
   -port int
         Server port (default 19416)
-
+  -resampling-quality int
+        Quality of resampling process (default 3)
+  -resampling-rate int
+        Frequency (Hz) to use to normalize file sample rate (default 44100)
 ```
 
 ## Work in progress

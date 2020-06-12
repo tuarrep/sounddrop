@@ -21,8 +21,10 @@ type MeshConfig struct {
 
 // StreamerConfig streamer config
 type StreamerConfig struct {
-	AutoStart   bool
-	PlaylistDir string
+	AutoStart         bool
+	PlaylistDir       string
+	ResamplingRate    int
+	ResamplingQuality int
 }
 
 // InitConfig load config from flags
@@ -33,12 +35,14 @@ func InitConfig() *Config {
 
 	autoStartStream := flag.Bool("auto-start-stream", false, "Auto start audio stream")
 	playlistDir := flag.String("playlist-dir", ".", "Directory containing audio files to play")
+	resamplingRate := flag.Int("resampling-rate", 44100, "Frequency (Hz) to use to normalize file sample rate")
+	resamplingQuality := flag.Int("resampling-quality", 3, "Quality of resampling process")
 
 	flag.Parse()
 
 	discoverConfig := &DiscoverConfig{Port: *discoverPort}
 	meshConfig := &MeshConfig{AutoAccept: *autoAccept}
-	streamerConfig := &StreamerConfig{AutoStart: *autoStartStream, PlaylistDir: *playlistDir}
+	streamerConfig := &StreamerConfig{AutoStart: *autoStartStream, PlaylistDir: *playlistDir, ResamplingRate: *resamplingRate, ResamplingQuality: *resamplingQuality}
 
 	config := &Config{Discover: discoverConfig, Mesh: meshConfig, Streamer: streamerConfig}
 

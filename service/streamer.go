@@ -36,6 +36,8 @@ func (s *Streamer) Serve() {
 
 	s.sb = util.GetServiceBag()
 
+	targetSampleRate := beep.SampleRate(s.sb.Config.Streamer.ResamplingRate)
+
 	files, err := ioutil.ReadDir(s.sb.Config.Streamer.PlaylistDir)
 	util.CheckError(err, s.log)
 
@@ -49,7 +51,13 @@ func (s *Streamer) Serve() {
 			continue
 		}
 
-		s.streamToMessage(stream, format)
+		var resampler *beep.Resampler
+		if targetSampleRate != format.SampleRate {
+			resampler = beep.Resample(s.sb.Config.Streamer.ResamplingQuality, format.SampleRate, targetSampleRate, stream)
+			s.streamToMessage(resampler, targetSampleRate)
+		} else {
+			s.streamToMessage(stream, targetSampleRate)
+		}
 	}
 }
 
@@ -91,7 +99,7 @@ func (s *Streamer) getStream(file os.FileInfo) (beep.StreamCloser, beep.Format, 
 	return stream, format, nil
 }
 
-func (s *Streamer) streamToMessage(stream beep.StreamCloser, format beep.Format) {
+func (s *Streamer) streamToMessage(stream streamable, sampleRate beep.SampleRate) {
 	buff := make([][2]float64, 512)
 	ok := true
 	n := 512
@@ -110,7 +118,7 @@ func (s *Streamer) streamToMessage(stream beep.StreamCloser, format beep.Format)
 			samplesRight[i] = buff[i][1]
 		}
 
-		nextRunIn := format.SampleRate.D(n)
+		nextRunIn := sampleRate.D(n)
 		nextRunAt += nextRunIn.Nanoseconds()
 
 		msg := &message.StreamData{SamplesLeft: samplesLeft, SamplesRight: samplesRight, NextAt: nextRunAt}
@@ -120,4 +128,8 @@ func (s *Streamer) streamToMessage(stream beep.StreamCloser, format beep.Format)
 
 		time.Sleep(nextRunIn - time.Duration(time.Now().UnixNano()-now) - time.Millisecond)
 	}
+}
+
+type streamable interface {
+	Stream(samples [][2]float64) (n int, ok bool)
 }
